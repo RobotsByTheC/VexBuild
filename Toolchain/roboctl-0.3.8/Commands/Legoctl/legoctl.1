@@ -1,0 +1,327 @@
+.TH LEGOCTL 1
+.SH NAME    \" Section header
+.PP
+ 
+legoctl - Lego robot communication and control utility
+
+\" Underline anything that is typed verbatim - commands, etc.
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+legoctl [flags] command [arguments]
+    
+Enter "legoctl" with no arguments for a brief list of flags.
+.ad
+.fi
+
+\" Optional sections
+.SH "PURPOSE"
+
+The
+.B legoctl
+command is a utility for communicating with and controlling Lego robotics
+bricks, such as the RCX, and NXT.
+
+.SH "DESCRIPTION"
+
+.B Legoctl
+is used to perform basic operations such as uploading files, displaying
+status information about the brick, starting and stopping programs, etc.
+
+.B Legoctl
+is based on the Robot Control library (-lroboctl), and is intended to
+run on all Unix-like compatible platforms.  It was developed under FreeBSD,
+and is also known to work under Cygwin, Linux, and Mac OS X.
+
+Since the default security settings of typical Unix systems are fairly
+restrictive, it may be necessary to adjust device permissions to allow
+non root users to use
+.B legoctl.
+
+.SH "USB on FreeBSD"
+
+On FreeBSD 5.x and later, this requires altering the
+.B devfs
+configuration.
+
+For Lego NXT USB devices, the simplest solution (for those who aren't
+concerned about the security of their USB devices) is adding the following
+lines to /etc/devfs.rules:
+
+.nf
+.na
+    [system=10]
+    add path 'ugen*' mode 666 group operator
+    add path 'usb*' mode 666 group operator
+.ad
+.fi
+
+Also make sure /etc/rc.conf contains the following:
+
+.nf
+.na
+    devd_enable="YES"
+    devfs_system_ruleset="system"
+.ad
+.fi
+
+Then run:
+
+.nf
+.na
+    /etc/rc.d/devfs restart
+.ad
+.fi
+
+USB device nodes are created according to these rules when the device
+is plugged in.
+Note that these rules make all generic USB devices writable to all users.
+
+A slightly more secure method for systems with multiple users would be
+to use permissions of 664, and add the those users whom you wish to
+have write access to the devices to the operator group.
+
+.SH "USB on Linux (Xubuntu 6)"
+
+Note that these are the configuration steps necessary for Xubuntu 6.
+Other Linux distributions may require additional configuration.
+
+Like FreeBSD, Linux USB device nodes are created on-the-fly when a device is
+connected, and are by default only writable by root.
+To make the NXT writable by all users, create the file
+/etc/udev/rules.d/70-legonxt.rules containing the following lines:
+
+.nf
+.na
+# Lego NXT
+BUS="usb", SYSFS{idVendor}="0694", MODE="0666" 
+.ad
+.fi 
+
+.SH "Serial ports on FreeBSD"
+
+Lego RCX users will need to configure a serial port for brick
+communication.  Serial device nodes are static (created at boot time)
+on FreeBSD.  To make them writable use chmod
+to change the permissions on /dev/cuaa*, and edit /etc/devfs.conf to
+make the changes survive the next reboot.
+For RCX serial devices, the following rules would do the trick:
+
+.nf
+.na
+    perm    /dev/cuaa0  0666
+    perm    /dev/cuaa1  0666
+.ad
+.fi
+
+Note again that these rules make all serial devices plugged into com1 and
+com2 writable to all users.  Consider the consequences before setting up
+such rules.
+
+.SH "BLUETOOTH"
+
+The Bluetooth interface is currently supported on FreeBSD and Linux.
+Before you can use bluetooth, you must configure the bluetooth daemon
+for your OS, and then pair the NXT with your computer.  ("Pairing" a
+bluetooth device is like plugging in a wired device
+such as USB, Firewire, etc.)
+
+To configure and pair your bluetooth connection in a fairly automated
+fashion, run the 
+.B lego_bluetooth_config
+script.  ( Included with the roboctl package. )
+If you prefer to do the configuration
+manually, or if lego_bluetooth_config
+does not yet support your platform, see the instructions below.
+
+.SH "BLUETOOTH ON FREEBSD"
+
+To learn more about bluetooth options on FreeBSD, please see the Bluetooth
+section in the FreeBSD handbook.
+
+Note: These are the configuration steps followed by the lego_bluetooth_config
+script.  You can perform these steps manually, or simply run the script.
+
+First, the appropriate bluetooth kernel modules must be loaded.  For
+most USB bluetooth dongles, this is done using
+
+.nf
+.na
+    kldload ng_ubt
+.ad
+.fi
+
+To load the module at boot time, add the following to /boot/loader.conf:
+
+.nf
+.na
+    ng_ubt_load="YES"
+.ad
+.fi
+
+You can scan for bluetooth devices using
+
+.nf
+.na
+    hccontrol inquiry
+.ad
+.fi
+
+If you have more than one bluetooth channel, you can specify one for
+any hccontrol command with the -n flag, e.g.
+
+.nf
+.na
+    hccontrol -n ubt0hci inquiry
+.ad
+.fi
+
+The names of reporting devices can be retrieved using the
+remote_name_request command with the bluetooth address, e.g.:
+
+.nf
+.na
+    hccontrol remote_name_request 00:11:22:33:44:55 0 0 0
+.ad
+.fi
+
+(Substitute your device address for 00:11:22:33:44:55).
+
+Next, you will need to enable the
+.B hcsecd
+daemon.
+This requires two steps.  First, add an entry like the following
+to /etc/bluetooth/hcsecd.conf:
+
+.nf
+.na
+    device {
+	    bdaddr  00:11:22:33:44:55;
+	    name    "NXT";
+	    key     nokey;
+	    pin     "1234";
+    }
+.ad
+.fi
+
+Note that "NXT" is the default bluetooth name of the NXT brick, and
+1234 is the default passcode.  Naturally, if you have changed these
+settings on the Lego controller, you must configure hcsecd.conf to
+match.
+
+Next, add the following to /etc/rc.conf:
+
+.nf
+.na
+    hcsecd_enable="YES"
+.ad
+.fi
+
+To activate hcsecd, you will need to reboot or run 
+
+.nf
+.na
+    /etc/rc.d/hcsecd start
+.ad
+.fi
+
+With hcsecd running, you can now perform pairing of your NXT with
+your FreeBSD box using the interface on the NXT brick.  Note that
+the brick may report "Line busy" when you connect.  This is a normal
+glitch, but will not prevent the link for working properly.  If your
+Lego controller finds your computer and asks you for a passcode when
+you connect, you have probably succeeded.
+
+Finally, add an entry like the following to /etc/bluetooth/hosts:
+
+00:11:22:33:44:55   NXT
+
+By default,
+.B Legoctl
+(and all other programs based on the roboctl library)
+will try to look up the address of the bluetooth device named "NXT"
+in the system bluetooth hosts database using 
+.B bt_gethostbyname(3).
+Note that the name in the bluetooth hosts database does not have to be
+the same name programmed into the NXT brick.  This is simply a name
+the operating system associates with the bluetooth address.
+
+If you have more than one NXT, they will of course need different
+names in the hosts database.
+You can select a non-default name on the command line with
+
+--btname name
+
+or by setting the environment variable
+.B ROBOCTL_BTNAME.
+
+In any case, the name and corresponding address must be in the bluetooth
+hosts database on your system.  See
+.B lego_bluetooth_config
+above.
+
+.SH "BLUETOOTH ON LINUX"
+
+The methods outlined here have been tested on Xubuntu 6.06.  Xubuntu
+has the bluetooth interface preconfigured and running in the default
+installation.  Note that this may not be the case with all Linux 
+distributions.
+
+These instructions currently work only for root.  Additional instructions
+for making bluetooth devices available to non-privileged users will be
+added when time permits.
+
+You can scan for bluetooth devices using
+
+.nf
+.na
+    hcitool scan
+.ad
+.fi
+
+You can perform pairing of your NXT with your Linux box using the interface
+on the NXT brick (recommended), or manipulate the pairing from Linux
+using the following commands:
+
+.nf
+.na
+hcitool scan                    # List devices in range
+hcitool cc 00:11:22:33:44:55    # Create connection
+.ad
+.fi
+
+.SH FILES
+.nf
+.na
+/dev/usb*, /dev/ugen*, /etc/devfs.conf, /etc/devfs.rules, /etc/usbd.conf
+/etc/bluetooth/hcsecd.conf, ~/.legoctl/bluetooth_address,
+/boot.loader.conf, /etc/rc.conf
+.ad
+.fi
+
+.SH ENVIRONMENT
+There are currently no environment settings that directly affect
+.B legoctl.
+
+.SH "SEE ALSO"
+nbc(1), nxc(1), nqc(1), roboctl(3), vexctl(1), ape(1), devfs(8), hcsecd(8)
+
+.SH BUGS
+Many commands are not yet implemented.
+
+.SH EXAMPLES
+.nf
+.na
+legoctl status
+legoctl --btname NXT2 status
+legoctl upload prog.rxe
+.ad
+.fi
+
+.SH AUTHOR
+.nf
+.na
+Jason W. Bacon
+http://acadix.biz
+

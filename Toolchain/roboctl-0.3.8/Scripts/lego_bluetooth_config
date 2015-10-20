@@ -1,0 +1,131 @@
+#!/bin/sh
+
+pause()
+{
+    echo 'Press any key to continue'
+    read junk
+}
+
+config_freebsd()
+{
+    clear
+    echo "Configuring bluetooth driver..."
+    ng_ubt_load='ng_ubt_load="YES"'
+    loader_conf='/boot/loader.conf'
+    
+    # USB bluetooth dongle support
+    kldload ng_ubt
+    if [ 0`grep $ng_ubt_load $loader_conf` = 0 ]; then
+	echo "Adding $ng_ubt_load to $loader_conf"
+	echo "# Added by $0" >> $loader_conf
+	echo $ng_ubt_load >> $loader_conf
+    else
+	echo "$ng_ubt_load already in $loader_conf"
+    fi
+    pause
+    
+    clear 
+    echo "Now perform each of the following steps:"
+    echo "  1. If you are using a USB bluetooth dongle, plug it in"
+    echo "  2. Turn on your Lego controller"
+    echo "  3. Make sure bluetooth is enabled on the Lego controller"
+    read junk
+    
+    selected='n'
+    echo "Scanning for bluetooth devices..."
+    for addr in `hccontrol inquiry | grep BD_ADDR | awk ' { print $2 }'`; do
+	# hccontrol remote_name_request $addr 0 0 0
+	name=`hccontrol remote_name_request $addr 0 0 0 | awk '$1 == "Name:" { print $2 }'`
+	echo "Found '$name', address=$addr"
+	echo "Is this an NXT controller that you would like to configure? (y/n)"
+	read response
+	if [ "$response" = 'y' ]; then
+	    selected='y'
+	    #addr=`echo $device | awk ' { print $1 }'`
+	    #name=`echo $device | awk ' { print $2 }'`
+	    tempfile='bluetooth_lego_tempfile_delete_me'
+	    echo 'Enter the passkey for this device. [default=1234]'
+	    read pin
+	    if [ 0$pin = '0' ]; then
+		pin="1234"
+	    fi
+	    
+	    echo "" > $tempfile
+	    echo "device {" >> $tempfile
+	    echo -e "\tbdaddr $addr;" >> $tempfile
+	    echo -e "\tname \"$name\";" >> $tempfile
+	    echo -e "\tkey nokey;" >> $tempfile
+	    echo -e "\tpin \"$pin\";" >> $tempfile
+	    echo "}" >> $tempfile
+	    
+	    hcsecd_conf='/etc/bluetooth/hcsecd.conf'
+	    addr_file=$HOME/.roboctl/bluetooth_address
+	    if [ "0`grep $addr $hcsecd_conf`" = "0" ]; then
+		echo "Adding to $hcsecd_conf..."
+		cat $tempfile >> $hcsecd_conf
+	    else
+		echo "$addr is already in $hcsecd_conf"
+	    fi
+	    
+	    bt_hosts='/etc/bluetooth/hosts'
+	    if [ "0`grep $addr $bt_hosts`" = "0" ]; then
+		echo "Adding $addr to $bt_hosts..."
+		echo -e "$addr\t$name" >> $bt_hosts
+	    else
+		echo "$addr already in $bt_hosts"
+	    fi
+    
+	    #mkdir -p $HOME/.roboctl
+	    #touch $HOME/.roboctl/bluetooth_address
+	    #if [ 0`grep $addr $addr_file` = '0' ]; then
+	    #    echo "Adding to $addr_file"
+	    #    echo $addr >> $addr_file
+	    #else
+	    #    echo "$addr is already in $addr_file"
+	    #fi
+	fi
+    done
+    if [ $selected = 'n' ]; then
+	exit
+    fi
+    pause
+    
+    clear
+    echo "Starting hcsecd..."
+    hcsecd_enable='hcsecd_enable="YES"'
+    rc_conf='/etc/rc.conf'
+    if [ 0`grep $hcsecd_enable $rc_conf` = '0' ]; then
+	echo "$hcsecd_enable" >> $rc_conf
+    else
+	echo "$hcsecd_enable is already in $rc_conf."
+    fi
+    /etc/rc.d/hcsecd restart
+    pause
+}
+
+if [ "`whoami`" != 'root' ]; then
+    echo "This script must be run as root."
+    exit 1
+fi
+
+case `uname` in
+FreeBSD)
+    config_freebsd
+    ;;
+*)
+    echo "Sorry, this script is not yet ported to `uname`."
+    echo "If you can do the work, please send patches to the maintainer."
+    ;;
+esac
+    
+clear
+echo "Now use bluetooth search on the NXT controller to connect to this computer."
+echo "When it asks you for a passkey, enter $pin."
+echo "You may get a 'Line busy' message.  This is normal."
+echo "If it asked you for a passkey, you are probably home free."
+pause
+
+clear
+echo "Testing the connection..."
+legoctl status
+

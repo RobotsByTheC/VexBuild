@@ -1,0 +1,217 @@
+.TH VEXCTL 1
+.SH NAME    \" Section header
+.PP
+ 
+vexctl - Vex robot communication and control utility
+
+\" Underline anything that is typed verbatim - commands, etc.
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+vexctl [flags] command [arguments]
+    
+Enter "vexctl" with no arguments for a brief list of flags.
+.ad
+.fi
+
+\" Optional sections
+.SH "PURPOSE"
+
+The
+.B vexctl
+command is a utility for communicating with and controlling the PIC
+micro-controller in a VEX robot.
+
+.SH "DESCRIPTION"
+
+.B Vexctl
+is used to perform basic operations such as uploading files, displaying
+status information about the controller, etc.
+
+.B Vexctl
+is based on the Robotics Control library (-lroboctl), and is intended to
+run on all POSIX compatible platforms.  It was developed under FreeBSD,
+and is also known to work on Mac OS X and Xubuntu Linux 6.06.
+
+Although the VEX uses an RS232 serial connection to communicate with
+the computer, recent VEX kits do not ship with a serial cable.  Instead,
+they include only a USB to serial adapter to connect with the programming
+module.  This adapter can be used with Windows, Mac, and any Unix system
+that supports the Prolific PL-2303 USB to serial chip.
+
+Depending on your version of FreeBSD, the Prolific device driver may or
+may not be built into the kernel.  You can find out by running
+
+.nf
+.na
+    kldload uplcom
+.ad
+.fi
+
+which will try to load the kernel module.
+If you get the error "kldload: can't load uplcom: File exists", then
+either the module is already loaded, or the driver is statically
+built into the kernel.
+
+If the kldload command finishes quietly, this means that the kernel
+module loaded successfully.  In this case, you should add
+.B uplcom_load="YES"
+to /boot/loader.conf to make it load automatically when the system is
+booted.  The
+device /dev/cuaU0 will be created when the USB cable is plugged in.
+This is the default device for
+.B vexctl.
+
+For Mac OS X, you must download and
+install a PL2303 driver (available at the Prolific WEB site) and reboot.
+The default device is /dev/cu.usbserial.  There seems to be a glitch with
+the Mac Prolific driver that causes communication with the VEX to freeze
+occasionally.  To work around it, simply unplug the USB cable from your Mac
+for a moment and plug it back in, so that /dev/cu.usbserial will be
+recreated and initialized.
+
+For Xubuntu Linux, the driver is loaded by default, and the default
+device is /dev/ttyUSB0.  Other Linux systems may require manually loading
+a kernel module, and configuring the system to load it at boot time.
+
+For Cygwin, you'll need to install the Prolific driver for Windows,
+which is available on the Vex WEB site.  With the USB-serial adapter plugged
+in, check device manager to verify the COM port assigned to it.  The
+Cygwin TTY device will be one less than the COM port number, e.g. COM3
+in Windows, is /dev/ttyS2 in Cygwin.
+
+To connect the
+programming module directly to the serial port on your computer, you will
+need a male-female DB9 RS232 extension cable with screws on both ends.
+The serial connector on the Vex dongle
+has posts, and cannot be plugged into a PC serial port, which also has
+posts.
+
+.SH "Device Permissions"
+
+Since the default security settings of most Unix systems are fairly
+restrictive, it may be necessary to adjust device permissions to allow
+non root users to use
+.B vexctl.
+
+.SH "USB on FreeBSD"
+
+On FreeBSD 5.x and later, this requires altering the
+.B devfs
+configuration.
+
+For USB devices, the simplest solution (for those who aren't
+concerned about the security of their USB devices) is adding the following
+lines to /etc/devfs.rules:
+
+.nf
+.na
+    [system=10]
+    add path 'ugen*' mode 666 group operator
+    add path 'cuaU*' mode 666 group operator
+.ad
+.fi
+
+Also make sure that /etc/rc.conf contains the following
+
+.nf
+.na
+    devd_enable="YES"
+    devfs_system_ruleset="system"
+.ad
+.fi
+
+Then run:
+
+.nf
+.na
+    /etc/rc.d/devfs restart
+.ad
+.fi
+
+USB device nodes are created according to these rules when the device
+is plugged in.
+Note that these rules make all generic USB devices writable to all users.
+Adjust the rules according to your security needs, or use an alternative
+strategy such as usbd.conf, or devd.conf.
+
+.SH "Serial ports on FreeBSD"
+
+For static devices (i.e. those created at boot time) on FreeBSD, use chmod
+to change the permissions on /dev/cuaa*, and edit /etc/devfs.conf to
+make the changes survive the next reboot.
+For RCX serial devices, the following rules would do the trick:
+
+.nf
+.na
+    perm    /dev/cuad0  0666
+    perm    /dev/cuad1  0666
+.ad
+.fi
+
+Note again that these rules make all serial devices plugged into com1 and
+com2 writable to all users.  Consider the consequences before setting up
+such rules.
+
+.SH TERMINALS
+
+The Vex robot uses a simple dedicated micro-controller with no operating
+system, no display, etc.  After a program is successfully uploaded to the
+Vex controller, it immediately begins running and has complete control of
+the controller.
+
+The only communication interface with the
+robot is through the serial port.  Most Vex programming languages offer
+some sort of print routine (e.g. PrintToScreen() in easyC)
+which sends character
+strings out the Vex serial port, presumably to a terminal window on
+a connected computer.  It is often useful to print information about
+sensor inputs, etc. to the terminal so that you can see what the program
+is doing.
+
+The concept of a terminal comes from the old days of computing when
+users worked on large multiuser systems through a keyboard and monitor
+(a terminal) connected to the host system through a serial port.
+Modern graphical computers use programs that emulate old style terminals.
+The VEX acts like a simple host computer sending output and receiving
+input through the serial port.  If your program produces output (e.g.
+using PrintToScreen()), it should appear on your terminal.
+
+The commercial IFI loaders for Windows have a built-in terminal emulator,
+which can optionally be opened after a program is uploaded.  In Unix,
+terminal emulators tools abound, so you can choose you favorite.
+You'll need to connect to the Vex using a serial communication tool
+from the terminal using the same serial parameters as the loader.
+(e.g. /dev/cuaU0, 115200, N, 8, 1).  Some text-based serial communication
+tools
+include cu, tip, kermit, and minicom.  Cutecom and seyon are a simple
+graphical programs that opens up their own terminal window.  If you're
+running under Cygwin, try Bray++ Terminal, which is very similar to
+Cutecom.
+
+.SH FILES
+.nf
+.na
+/dev/usb*, /dev/ugen*, /etc/devfs.conf, /etc/devfs.rules, /etc/usbd.conf
+.ad
+.fi
+
+.SH ENVIRONMENT
+.nf
+.na
+VEXCTL_DEV - The default device node.  Overrides the built-in default,
+and can be overridden with --dev flag.
+.ad
+.fi
+
+.SH "SEE ALSO"
+nbc(1), nxc(1), nqc(1), roboctl(3), legoctl(1), ape(1), cu(1), tip(1),
+kermit(1), minicom(1), cutecom(1)
+
+.SH AUTHOR
+.nf
+.na
+Jason W. Bacon
+http://acadix.biz
+

@@ -1,0 +1,75 @@
+
+--------------------------------------------------------------------------
+
+The overall goal of the legoctl library is to allow for the development
+of brick-independent communication tools, i.e. applications that require
+little or no modification in order to support new bricks.  The legoctl
+command serves as a basic example of how this goal is achieved.
+
+Lower, device-dependent layers will also be accessible in the API for
+specialized applications that need them.
+
+--------------------------------------------------------------------------
+
+Supported platforms:
+    POSIX
+
+Goals:
+    - High-level layer for device-independent tasks
+    - Low-level layers for device-dependent tasks
+    - Follow object-oriented design principals
+    - Put most of the functionality into libraries, to foster rapid
+      development of competing applications.  Look at multimedia tools
+      as an example:
+      Apps like mplayer, kaffeine, kplayer, etc. are little more than
+      user interfaces to the vast functionality of libs such as lame,
+      libogg, libmpeg, libquicktime, etc.
+    - Although the meat will go into libraries, let application development
+      drive library development from the top down.  I.e., develop applications
+      first, so that the optimal library API becomes clear.  This will lead
+      to a simpler and more intuitive library design.  Developing libraries
+      strictly from the bottom up often means having to later shoe-horn 
+      them into applications that need something a little different.  The
+      resulting code is full of "shims" (bridges from the API needed by
+      the program and the one provided by the library), and is usually
+      not very cohesive.  There are many ways to implement a set of
+      features, and it's difficult to guess the best way.  Developing apps
+      from the top down, with no preconceived lower-level API will reveal
+      the best way for you.
+
+Examples of device-independent projects
+    Although robotics is a much smaller niche, and prone to highly
+    specialized development, the device-independent concept
+    can still help avoid redundant development work, and provide
+    a common interface for beginners.
+    - termcap/terminfo
+    - gphoto
+    - gimp-print
+    
+Core utilities:
+    Device-independent C API
+	-   Allows use of generic source code that works with any
+	    Lego brick and communication interface
+	-   Device-specific information accessible through this
+	    method
+    Device-dependent layer for specific bricks below API layer
+    Interface-specific layer
+
+Client programs
+    Command line tools for uploading, downloading programs 
+	and firmware, checking battery level and other status, 
+	running, stopping programs, etc.
+    Testing suite to test all functions on all bricks
+    GUI apps?
+    Tools for working with experimental firmware?
+
+Other Language support:
+    C++
+    Java
+    Matlab
+    Pascal
+    Perl
+	Invite author of linxt to contribute
+    Python
+	Invite author of ? to contribute
+

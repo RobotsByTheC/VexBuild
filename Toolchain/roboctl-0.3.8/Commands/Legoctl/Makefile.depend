@@ -1,0 +1,6 @@
+legoctl.o: legoctl.c ../../Libs/C/roboctl.h ../../Libs/C/rct_machdep.h \
+ ../../Libs/C/rct_rcx.h ../../Libs/C/rct_nxt.h \
+ ../../Libs/C/rct_nxt_output.h ../../Libs/C/rct_pic.h \
+ ../../Libs/C/rct_protos.h legoctl_cmd.h protos.h
+	${CC} -c ${CFLAGS} legoctl.c
+

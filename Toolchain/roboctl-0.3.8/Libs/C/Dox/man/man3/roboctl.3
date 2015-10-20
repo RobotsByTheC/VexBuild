@@ -1,0 +1,311 @@
+.TH "Robot Communication API" 3 "14 May 2009" "Version 0.3" "roboctl" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Robot Communication API \- 
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBrct_init_brick_struct\fP (rct_brick_t *brick, rct_brick_type_t type)"
+.br
+.RI "\fIInitialize a brick structure. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_open_brick\fP (rct_brick_t *brick)"
+.br
+.RI "\fIOpen a connection to a brick. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_upload_file\fP (rct_brick_t *brick, char *filename, rct_flag_t flags)"
+.br
+.RI "\fIUpload a file to the brick. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_play_sound_file\fP (rct_brick_t *brick, rct_flag_t flags, char *filename)"
+.br
+.RI "\fIInstruct the brick to play a sound file. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_play_tone\fP (rct_brick_t *brick, int herz, int milliseconds)"
+.br
+.RI "\fIInstruct the robo brick to play a tone. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_delete_file\fP (rct_brick_t *brick, char *filename)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_start_program\fP (rct_brick_t *brick, char *filename)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_stop_program\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_download_file\fP (rct_brick_t *brick, char *filename)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_close_brick\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_get_battery_level\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_print_battery_level\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_get_firmware_version\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_print_firmware_version\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_print_device_info\fP (rct_brick_t *brick)"
+.br
+.ti -1c
+.RI "rct_status_t \fBrct_motor_on\fP (rct_brick_t *brick, int port, int power)"
+.br
+.ti -1c
+.RI "int \fBrct_find_bricks\fP (rct_brick_list_t *bricks, char *name, unsigned int flags)"
+.br
+.ti -1c
+.RI "int \fBrct_find_nxt_bricks\fP (rct_brick_list_t *bricks, char *name)"
+.br
+.ti -1c
+.RI "int \fBrct_find_nxt_usb\fP (rct_brick_list_t *bricks)"
+.br
+.ti -1c
+.RI "int \fBrct_find_nxt_bluetooth\fP (rct_brick_list_t *bricks, char *name)"
+.br
+.ti -1c
+.RI "rct_brick_t * \fBrct_get_brick_from_list\fP (rct_brick_list_t *list, int n)"
+.br
+.RI "\fIGet brick N from an rct_brick_list_t structure. \fP"
+.ti -1c
+.RI "int \fBrct_brick_count\fP (rct_brick_list_t *bricks)"
+.br
+.RI "\fIReturn the number of bricks in an rct_brick_list_t structure. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_set_count\fP (rct_brick_list_t *bricks, int n)"
+.br
+.RI "\fISet the number of bricks in an rct_brick_list_t structure. \fP"
+.ti -1c
+.RI "rct_status_t \fBrct_increase_count\fP (rct_brick_list_t *bricks, int n)"
+.br
+.RI "\fISet the number of bricks in an rct_brick_list_t structur. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+libroboctl is a C Application Programming Interface (API) for communication with robot bricks such as Lego and VEX. It implements the basic functions of the controller communication protocols, plus higher level functions such as file uploading, downloading, etc.
+.PP
+The library allows programs written in C (and other languages capable of linking to C routines) to locate robo bricks on available communication links (e.g. USB, Bluetooth), open a connection to the brick, send commands and data, and retrieve data.
+.PP
+The top-layer C API is brick and interface independent, so you can in many cases write one program that will work with any brick over any communication interface. E.g., uploading a program file or checking the battery level is essentially the same for all bricks and it makes no difference whether we use a serial port, USB, or Bluetooth to perform these tasks.
+.PP
+Although use of the device independent API is encouraged for the sake of minimizing code changes for new bricks, it is not required. Some operations, are of course, specific to a certain type of brick or only make sense for certain communication links. For example, using NXT direct commands to remote-control an NXT robot connected via a USB cable could be problematic or disastrous for the robot. In these cases, a program might want a Bluetooth connection or nothing.
+.PP
+Example program to print some basic device info:
+.PP
+.PP
+.nf
+#include <stdio.h>
+#include <sysexits.h>
+#include <legoctl/legoctl.h>
+
+/*
+ *  To compile:
+ *      LOCALBASE ?= /usr/local
+ *
+ *      cc -o print_status -I${LOCALBASE}/include print_status.c 
+ *              -L${LOCALBASE}/lib -llegoctl -lusb -lbluetooth
+ */
+ 
+int     main(int argc,char *argv[])
+
+{
+    lct_brick_list_t    bricks;
+    lct_brick_t         *brick;
+    
+    lct_find_bricks(&bricks,LCT_PROBE_DEV_NXT);
+    if ( lct_brick_count(&bricks) == 0 )
+    {
+        fputs('Sorry, no accessible bricks found.\n',stderr);
+        exit(EX_UNAVAILABLE);
+    }
+    
+    brick = lct_get_brick_from_list(&bricks,0);
+    if ( lct_open_brick(brick) == LCT_OK )
+    {
+        lct_print_device_info(brick);
+        lct_close_brick(brick);
+    }
+    return EX_OK;
+}
+
+.fi
+.PP
+.SH "See also"
+.PP
+nbc(1), nxc(1), nqc(1), legoctl(1), vexctl(1), ape(1) 
+.SH "Function Documentation"
+.PP 
+.SS "rct_brick_t* rct_get_brick_from_list (rct_brick_list_t * list, int n)"
+.PP
+Get brick N from an rct_brick_list_t structure. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIlist\fP - a structure containing an array of bricks. 
+.br
+\fIn\fP - the index of the desired brick. 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+Return a pointer to brick N in the array of bricks. 
+.SS "void rct_init_brick_struct (rct_brick_t * brick, rct_brick_type_t type)"
+.PP
+Initialize a brick structure. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIbrick\fP - Pointer to an uninitialized brick stucture. 
+.br
+\fItype\fP - RCT_NXT or RCT_RCX. 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+This function initializes the brick structure, including the brick dependent substructures for NXT, RCX, etc. This function must be called before any other functions that operate on the structure. Calling this function on a brick structure that has already been initialized and worked with may have disastrous results.
+.PP
+Supported bricks:
+.IP "\(bu" 2
+NXT
+.IP "\(bu" 2
+RCX 
+.PP
+
+.SS "rct_status_t rct_motor_on (rct_brick_t * brick, int port, int power)"
+.PP
+\fBParameters:\fP
+.RS 4
+\fI\\param\fP 
+.br
+\fI\\author\fP 
+.RE
+.PP
+
+.SS "rct_status_t rct_open_brick (rct_brick_t * brick)"
+.PP
+Open a connection to a brick. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIbrick\fP - Pointer to an initialized brick stucture. 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+Open a connection to specified brick. The connection handle is stored within the rct_brick_t structure. The structure must be initialized with rct_init_brick() first. This is normally done by rct_find_*().
+.PP
+Supported bricks/interfaces:
+.IP "\(bu" 2
+NXT
+.IP "  \(bu" 4
+USB
+.IP "  \(bu" 4
+Bluetooth 
+.PP
+
+.PP
+
+.SS "rct_status_t rct_play_sound_file (rct_brick_t * brick, rct_flag_t flags, char * filename)"
+.PP
+Instruct the brick to play a sound file. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIbrick\fP - Pointer to a brick structure with an open connection. 
+.br
+\fIflags\fP - Bit flags to control play mode. 
+.br
+\fIfilename\fP - Name of sound file (must be on brick already). 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+Play the specified sound file on the brick. The filename must end in '.rso', and must have been previously uploaded to the brick. The brick must first be opened with \fBrct_open_brick()\fP.
+.PP
+Valid flags:
+.IP "\(bu" 2
+RCT_NO_FLAGS
+.IP "\(bu" 2
+RCT_LOOP - Play file repeatedly until manually stopped by a stop command or the NXT stop button.
+.PP
+.PP
+Supported bricks:
+.IP "\(bu" 2
+NXT 
+.PP
+
+.SS "rct_status_t rct_play_tone (rct_brick_t * brick, int herz, int milliseconds)"
+.PP
+Instruct the robo brick to play a tone. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIbrick\fP - Pointer to a brick structure with an open connection. 
+.br
+\fIherz\fP - Frequency of the tone (200 - 14000Hz). 
+.br
+\fImilliseconds\fP - Duration of the tone. 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+Play the specified tone for the specified duration. The brick must first be opened with \fBrct_open_brick()\fP.
+.PP
+Supported bricks:
+.IP "\(bu" 2
+NXT 
+.PP
+
+.SS "rct_status_t rct_upload_file (rct_brick_t * brick, char * filename, rct_flag_t flags)"
+.PP
+Upload a file to the brick. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIbrick\fP - Pointer to a brick structure with an open connection. 
+.br
+\fIfilename\fP - name of the file on the local computer. 
+.br
+\fIflags\fP - upload mode 
+.RE
+.PP
+\fBAuthor:\fP
+.RS 4
+Jason W. Bacon
+.RE
+.PP
+Upload the specified file (e.g. an executable or sound file) to the brick. The brick must first be opened with \fBrct_open_brick()\fP.
+.PP
+Valid flags:
+.IP "\(bu" 2
+RCT_NO_FLAGS
+.IP "\(bu" 2
+RCT_OVERWRITE - replace the file if it already exists on the brick. Otherwise, upload file will fail and and return an error code. 
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for roboctl from the source code.

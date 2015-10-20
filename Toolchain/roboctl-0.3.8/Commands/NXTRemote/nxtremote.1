@@ -1,0 +1,137 @@
+.TH NXTREMOTE 1
+.SH NAME    \" Section header
+.PP
+
+nxtremote \- Remote control NXT via PC joystick or USB game pad
+over USB or Bluetooth
+
+\" Convention:
+\" Underline anything that is typed verbatim - commands, etc.
+.SH SYNOPSIS
+.PP
+.nf 
+.na 
+nxtremote [--btname name] <device> <max wheel power>
+    <max implement power> <button|joystick>
+.ad
+.fi
+
+\" Optional sections
+.SH "DESCRIPTION"
+
+.B Nxtremote
+is a simple program which uses a USB game pad or analog
+joystick along with the roboctl library to control an NXT robot
+over a USB or bluetooth connection.
+
+See legoctl(1) for instructions
+on establishing a bluetooth connection with your robot.
+
+Communication with the control device is handled by libgamepad(1).
+
+.B Nxtremote
+can control any robot with wheels connected to motor ports A and C, and a
+manipulator to port B.  The primary game pad/joystick (i.e.
+axes x and y) controls the wheels. The manipulator can be controlled either
+by buttons 1 and 2 or, in the case of a game pad with more than one
+joystick, the z and rz axes.
+
+.SH "COMMAND LINE ARGUMENTS"
+
+.B "--btname name"
+
+Specifies the bluetooth device name as it appears in the bluetooth
+hosts database searched by
+.B bt_gethostbyname(3).
+This is not necessarily the same name configured in the NXT brick.
+If --btname is not used, the bluetooth device name defaults to NXT,
+which is the default in the NXT brick.
+
+.B "Device"
+
+This specifies the device to with the joystick or game port is attached.
+Under FreeBSD,
+.B nxtremote
+can utilize the analog game port and joy driver (/dev/joy*) to connect
+with a PC joystick, or the uhid driver and usbhid library (/dev/uhid*)
+to connect with a USB game pad.
+Other platforms and interfaces will become available as time permits.
+
+.B "Max wheel power"
+
+This is the maximum power setting for motor ports A and C, to which the
+wheel motors are presumably connected.  Note that this
+is a percent scaling factor, not a cut-off value.  All power settings are
+multiplied by max-wheel-power/100.
+
+.B "Max implement power"
+
+This is the maximum power setting for motor port B, to which the implement
+motor is presumably attached.  Note that this
+is a percent scaling factor, not a cut-off value.  All power settings are
+multiplied by max-wheel-power/100.
+
+.B "Implement control"
+
+This argument determines how the implement of the robot is controlled
+from the joystick or game pad, and must be one of the strings
+"button" or "joystick".
+
+.SH NOTES
+
+To improve driving ease, joystick position is not mapped linearly to
+motor power.  Instead, it is warped using the 4th root function, i.e.
+
+power = maximum-power * (joystick_position ^ 0.25) / (100 ^ 0.25)
+
+This is based on the experience that a motor power of around 60 is
+generally necessary to move the vehicle or implement.  The root functions
+have a steeper slope than a straight line for small values, and shallower
+slope for large values.  Hence, a smaller movement of the
+joystick from center position will more quickly cover the (useless) power
+values from 0 to 60.  More of the joystick motion range is
+then utilized for the useful power values of 60 to 100.  As a result,
+the vehicle will start moving with the joystick closer to center position
+and the joystick must be moved farther to effect a noticeable
+change in vehicle/implement speed, which makes the controls less touchy.
+(I.e., you're less likely to oversteer.)
+The 4th root was chosen based on experimentation.  Higher roots tend to
+make the vehicle easier to operate than lower ones.  The 5th root
+(y=x^0.2) is too high, however, since it produces a motor power of 64
+for a joystick position of 1.  Since most joysticks never center perfectly,
+the robot generally won't stop when you let go of the joystick.
+
+Nxtremote is meant to be a sample program for the
+.B roboctl(3)
+library.  While you can use it as is with a simple robot on supported
+platforms, it's probably
+more useful and more fun to experiment with other robot designs and
+customize the source code to match.
+
+.SH FILES
+.nf
+.na
+$HOME/.roboctl/bluetooth_address
+.ad
+.fi
+
+.SH EXAMPLES
+.nf
+.na
+nxtremote /dev/joy0 85 60 button
+nxtremote /dev/uhid0 90 70 joystick
+.ad
+.fi
+
+.SH "SEE ALSO"
+legoctl(1), vexctl(1), roboctl(3), libgamepad(3), usbdevs(1)
+
+.SH FILES
+/etc/bluetooth/hosts
+
+.SH AUTHOR
+.nf
+.na
+Jason W. Bacon
+http://acadix.biz
+

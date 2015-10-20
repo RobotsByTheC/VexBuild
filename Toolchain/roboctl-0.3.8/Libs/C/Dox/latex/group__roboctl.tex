@@ -1,0 +1,245 @@
+\section{Robot Communication API}
+\label{group__roboctl}\index{Robot Communication API@{Robot Communication API}}
+\subsection*{Functions}
+\begin{CompactItemize}
+\item 
+void {\bf rct\_\-init\_\-brick\_\-struct} (rct\_\-brick\_\-t $\ast$brick, rct\_\-brick\_\-type\_\-t type)
+\begin{CompactList}\small\item\em Initialize a brick structure. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-open\_\-brick} (rct\_\-brick\_\-t $\ast$brick)
+\begin{CompactList}\small\item\em Open a connection to a brick. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-upload\_\-file} (rct\_\-brick\_\-t $\ast$brick, char $\ast$filename, rct\_\-flag\_\-t flags)
+\begin{CompactList}\small\item\em Upload a file to the brick. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-play\_\-sound\_\-file} (rct\_\-brick\_\-t $\ast$brick, rct\_\-flag\_\-t flags, char $\ast$filename)
+\begin{CompactList}\small\item\em Instruct the brick to play a sound file. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-play\_\-tone} (rct\_\-brick\_\-t $\ast$brick, int herz, int milliseconds)
+\begin{CompactList}\small\item\em Instruct the robo brick to play a tone. \item\end{CompactList}\item 
+rct\_\-status\_\-t \textbf{rct\_\-delete\_\-file} (rct\_\-brick\_\-t $\ast$brick, char $\ast$filename)\label{group__roboctl_g42a7555462ca9bb62fa942ed89741710_g42a7555462ca9bb62fa942ed89741710}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-start\_\-program} (rct\_\-brick\_\-t $\ast$brick, char $\ast$filename)\label{group__roboctl_ge8227e2ce28cc85c8793ed380704ce30_ge8227e2ce28cc85c8793ed380704ce30}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-stop\_\-program} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_g54d073ff7470a68ae8c30b8518f0d672_g54d073ff7470a68ae8c30b8518f0d672}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-download\_\-file} (rct\_\-brick\_\-t $\ast$brick, char $\ast$filename)\label{group__roboctl_ga0cb817205b3da6276c2d47540382c73_ga0cb817205b3da6276c2d47540382c73}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-close\_\-brick} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_g30a7dda0d266b69d8e7c35a3bd33c2be_g30a7dda0d266b69d8e7c35a3bd33c2be}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-get\_\-battery\_\-level} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_gb4a7319e58ee8cccae56253ebe4dad96_gb4a7319e58ee8cccae56253ebe4dad96}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-print\_\-battery\_\-level} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_g5d0db06419d6d97b542dc047ceddb09a_g5d0db06419d6d97b542dc047ceddb09a}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-get\_\-firmware\_\-version} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_gf822e6f5f31c471276e93bfcc8ba56bb_gf822e6f5f31c471276e93bfcc8ba56bb}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-print\_\-firmware\_\-version} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_ga93b16a250b85cfe80cb46ffaefbe680_ga93b16a250b85cfe80cb46ffaefbe680}
+
+\item 
+rct\_\-status\_\-t \textbf{rct\_\-print\_\-device\_\-info} (rct\_\-brick\_\-t $\ast$brick)\label{group__roboctl_g5e2682407d69787d675143b485f93b15_g5e2682407d69787d675143b485f93b15}
+
+\item 
+rct\_\-status\_\-t {\bf rct\_\-motor\_\-on} (rct\_\-brick\_\-t $\ast$brick, int port, int power)
+\item 
+int \textbf{rct\_\-find\_\-bricks} (rct\_\-brick\_\-list\_\-t $\ast$bricks, char $\ast$name, unsigned int flags)\label{group__roboctl_gf92bd5dd67af74d80018e9c3b35e170b_gf92bd5dd67af74d80018e9c3b35e170b}
+
+\item 
+int \textbf{rct\_\-find\_\-nxt\_\-bricks} (rct\_\-brick\_\-list\_\-t $\ast$bricks, char $\ast$name)\label{group__roboctl_gfef8cbab73299f41dc270235c534df92_gfef8cbab73299f41dc270235c534df92}
+
+\item 
+int \textbf{rct\_\-find\_\-nxt\_\-usb} (rct\_\-brick\_\-list\_\-t $\ast$bricks)\label{group__roboctl_g597c142c000032f4a77ed3c01fe9622f_g597c142c000032f4a77ed3c01fe9622f}
+
+\item 
+int \textbf{rct\_\-find\_\-nxt\_\-bluetooth} (rct\_\-brick\_\-list\_\-t $\ast$bricks, char $\ast$name)\label{group__roboctl_gb671920e9100c3d862a79c3327123938_gb671920e9100c3d862a79c3327123938}
+
+\item 
+rct\_\-brick\_\-t $\ast$ {\bf rct\_\-get\_\-brick\_\-from\_\-list} (rct\_\-brick\_\-list\_\-t $\ast$list, int n)
+\begin{CompactList}\small\item\em Get brick N from an rct\_\-brick\_\-list\_\-t structure. \item\end{CompactList}\item 
+int {\bf rct\_\-brick\_\-count} (rct\_\-brick\_\-list\_\-t $\ast$bricks)\label{group__roboctl_g10d1fb9fd26ad6625ac8e832833f25ba_g10d1fb9fd26ad6625ac8e832833f25ba}
+
+\begin{CompactList}\small\item\em Return the number of bricks in an rct\_\-brick\_\-list\_\-t structure. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-set\_\-count} (rct\_\-brick\_\-list\_\-t $\ast$bricks, int n)\label{group__roboctl_g139278821a9fcaf90ccbb7a286d8cbfb_g139278821a9fcaf90ccbb7a286d8cbfb}
+
+\begin{CompactList}\small\item\em Set the number of bricks in an rct\_\-brick\_\-list\_\-t structure. \item\end{CompactList}\item 
+rct\_\-status\_\-t {\bf rct\_\-increase\_\-count} (rct\_\-brick\_\-list\_\-t $\ast$bricks, int n)\label{group__roboctl_g422be9219ab5f1ff2a5ec7edd5eb4f61_g422be9219ab5f1ff2a5ec7edd5eb4f61}
+
+\begin{CompactList}\small\item\em Set the number of bricks in an rct\_\-brick\_\-list\_\-t structur. \item\end{CompactList}\end{CompactItemize}
+
+
+\subsection{Detailed Description}
+libroboctl is a C Application Programming Interface (API) for communication with robot bricks such as Lego and VEX. It implements the basic functions of the controller communication protocols, plus higher level functions such as file uploading, downloading, etc.
+
+The library allows programs written in C (and other languages capable of linking to C routines) to locate robo bricks on available communication links (e.g. USB, Bluetooth), open a connection to the brick, send commands and data, and retrieve data.
+
+The top-layer C API is brick and interface independent, so you can in many cases write one program that will work with any brick over any communication interface. E.g., uploading a program file or checking the battery level is essentially the same for all bricks and it makes no difference whether we use a serial port, USB, or Bluetooth to perform these tasks.
+
+Although use of the device independent API is encouraged for the sake of minimizing code changes for new bricks, it is not required. Some operations, are of course, specific to a certain type of brick or only make sense for certain communication links. For example, using NXT direct commands to remote-control an NXT robot connected via a USB cable could be problematic or disastrous for the robot. In these cases, a program might want a Bluetooth connection or nothing.
+
+Example program to print some basic device info:
+
+
+
+\begin{DocInclude}\begin{verbatim}#include <stdio.h>
+#include <sysexits.h>
+#include <legoctl/legoctl.h>
+
+/*
+ *  To compile:
+ *      LOCALBASE ?= /usr/local
+ *
+ *      cc -o print_status -I${LOCALBASE}/include print_status.c 
+ *              -L${LOCALBASE}/lib -llegoctl -lusb -lbluetooth
+ */
+ 
+int     main(int argc,char *argv[])
+
+{
+    lct_brick_list_t    bricks;
+    lct_brick_t         *brick;
+    
+    lct_find_bricks(&bricks,LCT_PROBE_DEV_NXT);
+    if ( lct_brick_count(&bricks) == 0 )
+    {
+        fputs("Sorry, no accessible bricks found.\n",stderr);
+        exit(EX_UNAVAILABLE);
+    }
+    
+    brick = lct_get_brick_from_list(&bricks,0);
+    if ( lct_open_brick(brick) == LCT_OK )
+    {
+        lct_print_device_info(brick);
+        lct_close_brick(brick);
+    }
+    return EX_OK;
+}
+
+\end{verbatim}
+\end{DocInclude}
+\subsection{See also}\label{group__roboctl_seealso}
+nbc(1), nxc(1), nqc(1), legoctl(1), vexctl(1), ape(1) 
+
+\subsection{Function Documentation}
+\index{roboctl@{roboctl}!rct\_\-get\_\-brick\_\-from\_\-list@{rct\_\-get\_\-brick\_\-from\_\-list}}
+\index{rct\_\-get\_\-brick\_\-from\_\-list@{rct\_\-get\_\-brick\_\-from\_\-list}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-get\_\-brick\_\-from\_\-list}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-brick\_\-t$\ast$ rct\_\-get\_\-brick\_\-from\_\-list (rct\_\-brick\_\-list\_\-t $\ast$ {\em list}, \/  int {\em n})}\label{group__roboctl_g4578e3b7bf9f2fc5a35a01db0e07be1e_g4578e3b7bf9f2fc5a35a01db0e07be1e}
+
+
+Get brick N from an rct\_\-brick\_\-list\_\-t structure. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em list}]- a structure containing an array of bricks. \item[{\em n}]- the index of the desired brick. \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+Return a pointer to brick N in the array of bricks. \index{roboctl@{roboctl}!rct\_\-init\_\-brick\_\-struct@{rct\_\-init\_\-brick\_\-struct}}
+\index{rct\_\-init\_\-brick\_\-struct@{rct\_\-init\_\-brick\_\-struct}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-init\_\-brick\_\-struct}]{\setlength{\rightskip}{0pt plus 5cm}void rct\_\-init\_\-brick\_\-struct (rct\_\-brick\_\-t $\ast$ {\em brick}, \/  rct\_\-brick\_\-type\_\-t {\em type})}\label{group__roboctl_g3a0edce9556381a09fabee27ce49511d_g3a0edce9556381a09fabee27ce49511d}
+
+
+Initialize a brick structure. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em brick}]- Pointer to an uninitialized brick stucture. \item[{\em type}]- RCT\_\-NXT or RCT\_\-RCX. \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+This function initializes the brick structure, including the brick dependent substructures for NXT, RCX, etc. This function must be called before any other functions that operate on the structure. Calling this function on a brick structure that has already been initialized and worked with may have disastrous results.
+
+Supported bricks:\begin{itemize}
+\item NXT\item RCX \end{itemize}
+\index{roboctl@{roboctl}!rct\_\-motor\_\-on@{rct\_\-motor\_\-on}}
+\index{rct\_\-motor\_\-on@{rct\_\-motor\_\-on}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-motor\_\-on}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-status\_\-t rct\_\-motor\_\-on (rct\_\-brick\_\-t $\ast$ {\em brick}, \/  int {\em port}, \/  int {\em power})}\label{group__roboctl_gd7fe91c76042948be453b74f24164ffb_gd7fe91c76042948be453b74f24164ffb}
+
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em $\backslash$param}]\item[{\em $\backslash$author}]\end{description}
+\end{Desc}
+\index{roboctl@{roboctl}!rct\_\-open\_\-brick@{rct\_\-open\_\-brick}}
+\index{rct\_\-open\_\-brick@{rct\_\-open\_\-brick}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-open\_\-brick}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-status\_\-t rct\_\-open\_\-brick (rct\_\-brick\_\-t $\ast$ {\em brick})}\label{group__roboctl_g834e4eeb4d2af815f21b0992479bf617_g834e4eeb4d2af815f21b0992479bf617}
+
+
+Open a connection to a brick. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em brick}]- Pointer to an initialized brick stucture. \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+Open a connection to specified brick. The connection handle is stored within the rct\_\-brick\_\-t structure. The structure must be initialized with rct\_\-init\_\-brick() first. This is normally done by rct\_\-find\_\-$\ast$().
+
+Supported bricks/interfaces:\begin{itemize}
+\item NXT\begin{itemize}
+\item USB\item Bluetooth \end{itemize}
+\end{itemize}
+\index{roboctl@{roboctl}!rct\_\-play\_\-sound\_\-file@{rct\_\-play\_\-sound\_\-file}}
+\index{rct\_\-play\_\-sound\_\-file@{rct\_\-play\_\-sound\_\-file}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-play\_\-sound\_\-file}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-status\_\-t rct\_\-play\_\-sound\_\-file (rct\_\-brick\_\-t $\ast$ {\em brick}, \/  rct\_\-flag\_\-t {\em flags}, \/  char $\ast$ {\em filename})}\label{group__roboctl_ge9d11a616a27ff7d1b777a61a5d74695_ge9d11a616a27ff7d1b777a61a5d74695}
+
+
+Instruct the brick to play a sound file. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em brick}]- Pointer to a brick structure with an open connection. \item[{\em flags}]- Bit flags to control play mode. \item[{\em filename}]- Name of sound file (must be on brick already). \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+Play the specified sound file on the brick. The filename must end in \char`\"{}.rso\char`\"{}, and must have been previously uploaded to the brick. The brick must first be opened with \doxyref{rct\_\-open\_\-brick()}{p.}{group__roboctl_g834e4eeb4d2af815f21b0992479bf617_g834e4eeb4d2af815f21b0992479bf617}.
+
+Valid flags:\begin{itemize}
+\item RCT\_\-NO\_\-FLAGS\item RCT\_\-LOOP - Play file repeatedly until manually stopped by a stop command or the NXT stop button.\end{itemize}
+
+
+Supported bricks:\begin{itemize}
+\item NXT \end{itemize}
+\index{roboctl@{roboctl}!rct\_\-play\_\-tone@{rct\_\-play\_\-tone}}
+\index{rct\_\-play\_\-tone@{rct\_\-play\_\-tone}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-play\_\-tone}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-status\_\-t rct\_\-play\_\-tone (rct\_\-brick\_\-t $\ast$ {\em brick}, \/  int {\em herz}, \/  int {\em milliseconds})}\label{group__roboctl_g26cd8dea80ca28a054b686350706d171_g26cd8dea80ca28a054b686350706d171}
+
+
+Instruct the robo brick to play a tone. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em brick}]- Pointer to a brick structure with an open connection. \item[{\em herz}]- Frequency of the tone (200 - 14000Hz). \item[{\em milliseconds}]- Duration of the tone. \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+Play the specified tone for the specified duration. The brick must first be opened with \doxyref{rct\_\-open\_\-brick()}{p.}{group__roboctl_g834e4eeb4d2af815f21b0992479bf617_g834e4eeb4d2af815f21b0992479bf617}.
+
+Supported bricks:\begin{itemize}
+\item NXT \end{itemize}
+\index{roboctl@{roboctl}!rct\_\-upload\_\-file@{rct\_\-upload\_\-file}}
+\index{rct\_\-upload\_\-file@{rct\_\-upload\_\-file}!roboctl@{roboctl}}
+\subsubsection[{rct\_\-upload\_\-file}]{\setlength{\rightskip}{0pt plus 5cm}rct\_\-status\_\-t rct\_\-upload\_\-file (rct\_\-brick\_\-t $\ast$ {\em brick}, \/  char $\ast$ {\em filename}, \/  rct\_\-flag\_\-t {\em flags})}\label{group__roboctl_g78a395f38ef678f79a7495d5f945f179_g78a395f38ef678f79a7495d5f945f179}
+
+
+Upload a file to the brick. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em brick}]- Pointer to a brick structure with an open connection. \item[{\em filename}]- name of the file on the local computer. \item[{\em flags}]- upload mode \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Author:]Jason W. Bacon\end{Desc}
+Upload the specified file (e.g. an executable or sound file) to the brick. The brick must first be opened with \doxyref{rct\_\-open\_\-brick()}{p.}{group__roboctl_g834e4eeb4d2af815f21b0992479bf617_g834e4eeb4d2af815f21b0992479bf617}.
+
+Valid flags:\begin{itemize}
+\item RCT\_\-NO\_\-FLAGS\item RCT\_\-OVERWRITE - replace the file if it already exists on the brick. Otherwise, upload file will fail and and return an error code. \end{itemize}

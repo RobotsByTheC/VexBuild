@@ -1,0 +1,15 @@
+#!/bin/sh
+
+case    `uname` in
+FreeBSD)
+    bt="`hccontrol -n ubt0hci inquiry | awk '$1 == "BD_ADDR:" { print $2 }'`"
+    for address in ${bt}
+    do
+	hccontrol -n ubt0hci remote_name_request ${address} 0 0 0
+    done
+    ;;
+*)
+    echo "Sorry, `uname` is not currently supported."
+    exit 1
+esac
+

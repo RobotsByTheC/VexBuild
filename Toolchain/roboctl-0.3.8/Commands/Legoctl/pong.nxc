@@ -1,0 +1,163 @@
+//
+// Pong for the LEGO Mindstorms NXT.
+//
+// Copyright (c) 2007, Michael Andersen (mian@pobox.com)
+//
+
+#include "NXCDefs.h"
+
+#define HEIGHT                    (64)
+#define WIDTH                     (100)
+#define PADDLE_HEIGHT             (HEIGHT/8)
+#define PADDLE_WIDTH              (1)
+#define PADDLE_MIN                (0)
+#define PADDLE_MAX                (HEIGHT-PADDLE_HEIGHT)
+
+#define TACHO_PADDLE_RATIO        (1)
+
+#define LOOP_PAUSE                (500)
+
+#define A_X                       (0)
+#define B_X                       (98)
+
+#define BALL_DX                   (4)
+#define BALL_DY                   (0)
+
+#define BALL_DIAMETER             (2)
+
+task main ()
+{
+   int i, j;
+
+   int score_a, score_b;
+   
+   int motor_a_now, motor_a_before, motor_a_init, a;
+   int motor_b_now, motor_b_before, motor_b_init, b;
+   
+   int ball_x, ball_y, ball_dx, ball_dy, ball_angle;
+
+   // initial motor positions
+   motor_a_init = MotorTachoCount (OUT_A);
+   motor_a_now = motor_a_init;
+   motor_a_before = motor_a_init;
+   motor_b_init = MotorTachoCount (OUT_B);
+   motor_b_now = motor_b_init;
+   motor_b_before = motor_b_init;
+
+   // center paddle positions
+   a = HEIGHT/2-PADDLE_HEIGHT/2;
+   b = HEIGHT/2-PADDLE_HEIGHT/2;
+   
+   // ball position
+   ball_x = WIDTH/2;
+   ball_y = HEIGHT/2;
+   // ball speed
+   ball_dx = BALL_DX;
+   ball_dy = BALL_DY;
+   
+   // scores
+   score_a = 0;
+   score_b = 0;
+
+   while (true)
+   {
+     motor_a_now = MotorTachoCount (OUT_A) - motor_a_init;
+     if (motor_a_now <> motor_a_before)
+     {
+       a = a + (motor_a_now - motor_a_before)/TACHO_PADDLE_RATIO;
+       if (a < PADDLE_MIN) a = PADDLE_MIN;
+       if (a > PADDLE_MAX) a = PADDLE_MAX;
+     }
+     motor_a_before = motor_a_now;
+     
+     motor_b_now = MotorTachoCount (OUT_B) - motor_b_init;
+     if (motor_b_now <> motor_b_before)
+     {
+       b = b + (motor_b_now - motor_b_before)/TACHO_PADDLE_RATIO;
+       if (b < PADDLE_MIN) b = PADDLE_MIN;
+       if (b > PADDLE_MAX) b = PADDLE_MAX;
+     }
+     motor_b_before = motor_b_now;
+     
+     // new position
+     ball_x += ball_dx;
+     ball_y += ball_dy;
+     
+     // adjust for A paddle bounce (left)
+     if (ball_x < 1)
+     {
+	if ((a <= ball_y) && (ball_y <= (a + PADDLE_HEIGHT)))
+	{
+	  // hit - calculate angle of return
+	  ball_dy = (ball_y - a - PADDLE_HEIGHT/2)/2; // range -4 to 4
+	  ball_dx = 4;
+	  ball_x += ball_dx;
+	}
+	else
+	{
+	  // missed
+	  score_b++;
+	  
+	  // ball position
+	  ball_x = WIDTH/2;
+	  ball_y = HEIGHT/2;
+	  // ball speed
+	  ball_dx = -BALL_DX;
+	  ball_dy = BALL_DY;
+	}
+     }
+
+     // adjust for B paddle bounce (right)
+     if (ball_x > 98)
+     {
+	if ((b <= ball_y) && (ball_y <= (b + PADDLE_HEIGHT)))
+	{
+	  // hit - calculate angle of return
+	  ball_dy = (ball_y - b - PADDLE_HEIGHT/2)/2; // range -4 to 4
+	  ball_dx = -4;
+	  ball_x += ball_dx;
+	}
+	else
+	{
+	  // missed
+	  score_a++;
+
+	  // ball position
+	  ball_x = WIDTH/2;
+	  ball_y = HEIGHT/2;
+	  // ball speed
+	  ball_dx = BALL_DX;
+	  ball_dy = BALL_DY;
+	}
+     }
+
+    // adjust for side bounce
+     if ((ball_y <= 0) || (ball_y > 64))
+     {
+	ball_y -= ball_dy;
+	ball_dy = -ball_dy;
+     }
+
+     ClearScreen ();
+     // paddles
+     RectOut (A_X, a, PADDLE_WIDTH, PADDLE_HEIGHT);
+     RectOut (B_X, b, PADDLE_WIDTH, PADDLE_HEIGHT);
+     // net
+     RectOut (49,3,1,8);
+     RectOut (49,19,1,8);
+     RectOut (49,35,1,8);
+     RectOut (49,51,1,8);
+     // ball
+     //NumOut (10, LCD_LINE2, ball_x);
+     //NumOut (10, LCD_LINE3, ball_y);
+     //CircleOut (ball_x, ball_y, BALL_DIAMETER);
+     RectOut (ball_x-1, ball_y-1, 1, 1);
+     RectOut (ball_x-2, ball_y-2, 3, 3);
+     // score
+     NumOut (35, LCD_LINE8, score_a);
+     NumOut (60, LCD_LINE8, score_b);
+
+     for (i = 0; i < LOOP_PAUSE; i++);
+   }
+}
+
