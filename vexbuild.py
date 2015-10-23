@@ -29,15 +29,15 @@ def build():
     
     # Check if the project and toolchain directories exist
     if not toolchain_dir.is_dir():
-        error("Toolchain directory does not exist or is not a directory.")
+        raise FileNotFoundError("Toolchain directory does not exist or is not a directory.")
     if not project_dir.is_dir():
-        error("Project directory does not exist or is not a directory.")
+        raise FileNotFoundError("Project directory does not exist or is not a directory.")
     
     # Check if source directory exists
     global src_dir
     src_dir = project_dir / "src"
     if not src_dir.is_dir():
-        raise ("Source directory does not exist or is not a directory.")
+        raise FileNotFoundError("Source directory does not exist or is not a directory.")
     
     # Check if build directory exists and create it if not
     global build_dir
