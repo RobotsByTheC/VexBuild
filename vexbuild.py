@@ -147,10 +147,10 @@ def setup_toolchain():
     global vexctl
     vexctl_dir = toolchain_dir / "vexctl"
     
-    if platform.system() == "Linux":
-        vexctl = vexctl_dir / "vexctl-linux-x86_64"
-    else:
-        vexctl = None
+    os = get_os()
+    if os[0] == "Linux":
+        if os[1]:
+            vexctl = vexctl_dir / "vexctl-linux-x86_64"
         
     if vexctl != None and not vexctl.exists():
         raise FileNotFoundError("Could not find vexctl")
@@ -220,7 +220,7 @@ def compile(file):
     info("Compiling: " + str(file))
     
     args = []
-    if platform.system() != "Windows":
+    if get_os()[0] != "Windows":
         args.append("wine")
 
     output_file = to_windows_path(build_dir / (file.stem + ".o"))
@@ -235,7 +235,7 @@ def link(output_files):
     info("Linking...")
     
     args = []
-    if platform.system() != "Windows":
+    if get_os()[0] != "Windows":
         args.append("wine")
         
     args.extend([str(mplink), str(wpilib_linker_script), "/a", "INHX32", "/w", "/m",
@@ -273,6 +273,9 @@ def get_hex_file():
     
 def info(msg):
     print(msg, flush=True)
+    
+def get_os():
+    return (platform.system(), platform.machine().endswith("64"))
     
 def debug(msg):
     if debug_enabled:
