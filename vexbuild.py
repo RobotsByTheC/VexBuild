@@ -10,7 +10,6 @@ import pathlib
 import subprocess
 import platform
 from warnings import warn
-from test.sortperf import flush
 
 include_regex = re.compile('\s*\#include\s+["<]([^">]+)*[">]')
 
@@ -92,14 +91,14 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser()
     
-    parser.add_argument("--debug", help="Print debug messages.", action="store_true")
-    parser.add_argument("project_dir", help="Project directory.", nargs="?", default=".")
+    parser.add_argument("--debug", help="print debug messages", action="store_true")
+    parser.add_argument("project_dir", help="project directory", nargs="?", default=".")
     
     default_toolchain_dir = Path(os.path.realpath(__file__)).parent / "Toolchain"
-    parser.add_argument("--toolchain", help="Vex toolchain location.",
+    parser.add_argument("--toolchain", help="vex toolchain location",
                         default=Path(os.getenv("VEX_TOOLCHAIN_HOME", default_toolchain_dir)))
     
-    parser.add_argument("--upload", help="Try to upload to the Vex controller.", action="store_true")
+    parser.add_argument("--upload", help="try to upload to the Vex controller", action="store_true")
     
     args = parser.parse_args()
     
@@ -146,8 +145,14 @@ def setup_toolchain():
     wpilib_linker_script = wpilib_dir / "18f8520.lkr"
     
     global vexctl
-    vexctl = toolchain_dir / "vexctl" / "vexctl"
-    if not vexctl.exists():
+    vexctl_dir = toolchain_dir / "vexctl"
+    
+    if platform.system() == "Linux":
+        vexctl = vexctl_dir / "vexctl-linux-x86_64"
+    else:
+        vexctl = None
+        
+    if vexctl != None and not vexctl.exists():
         raise FileNotFoundError("Could not find vexctl")
         
 def read_modification_times():
@@ -243,14 +248,18 @@ def link(output_files):
         raise ChildProcessError("Failed to link executable.")
     
 def upload(hex_file):
-    if hex_file.exists():
-        info("Uploading...")
-        if subprocess.call([str(vexctl), "upload", str(hex_file)]) != 0:
-            raise ChildProcessError("Failed to upload code to Vex controller.")
+    if vexctl != None:
+        if hex_file.exists():
+            info("Uploading...")
+            if subprocess.call([str(vexctl), "upload", str(hex_file)]) != 0:
+                raise ChildProcessError("Failed to upload code to Vex controller.")
+        else:
+            raise FileNotFoundError("Hex file (" + str(hex_file) + ") does not exist.")
     else:
-        raise FileNotFoundError("Hex file (" + str(hex_file) + ") does not exist.")
+        info("Uploading is not yet supported by VexBuild on your platform.")
 
 def to_windows_path(path):
+    # A Windows path can only be created from an absolute POSIX path
     if isinstance(path, pathlib.PosixPath) and path.is_absolute():
         # Create a wine windows path
         path_str = str(path)
@@ -258,6 +267,7 @@ def to_windows_path(path):
         path = pathlib.PureWindowsPath(path_str)
     return path
 
+# Get the absolute path to the hex output file
 def get_hex_file():
     return build_dir / (project_dir.name + ".hex")
     
@@ -272,15 +282,24 @@ if __name__ == "__main__":
     import os
     import warnings
     
-    warnings.showwarning = lambda message, category, filename, lineno: print("Warning:", message, flush=True, file=sys.stderr)
-    
     parse_args()
     
+    # If debug mode is not enabled, only print warning messages, not their whole stack trace
+    if not debug_enabled:
+        warnings.showwarning = lambda message, category, filename, lineno: print("Warning:", message, flush=True, file=sys.stderr)
+    
     try:
+        # Build the program
         build()
     
+        # If the upload flag was given, upload the program
         if upload_enabled:
             upload(get_hex_file())
     except (FileNotFoundError, ChildProcessError) as e:
-        print(str(e), flush=True, file=sys.stderr)
+        # Throw the exception if debug is enabled, otherwise just print it and exit
+        if debug_enabled:
+            raise e
+        else:
+            print("Error: " + str(e), flush=True, file=sys.stderr)
+            exit(1)
     
