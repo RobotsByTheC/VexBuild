@@ -9,6 +9,7 @@ from builtins import isinstance
 import pathlib
 import platform
 from warnings import warn
+import vexupload
 
 include_regex = re.compile('\s*\#include\s+["<]([^">]+)*[">]')
 
@@ -74,7 +75,6 @@ def build():
         
     modified_files = [f for f in modified_files if f.suffix == ".c"]
 
-    output_files = []
     for f in modified_files:
         compile(f)
             
@@ -98,16 +98,19 @@ def parse_args():
                         default=Path(os.getenv("VEX_TOOLCHAIN_HOME", default_toolchain_dir)))
     
     parser.add_argument("--upload", help="try to upload to the Vex controller", action="store_true")
+    parser.add_argument("--dev", help="serial device to use for uploading", default=None)
     
     args = parser.parse_args()
     
-    global debug_level
+    global debug_enabled
     global project_dir
     global upload_enabled
+    global upload_device
     global toolchain_dir
-    debug_level = args.debug
+    debug_enabled = args.debug
     project_dir = Path(args.project_dir)
     upload_enabled = args.upload
+    upload_device = args.dev
     toolchain_dir = args.toolchain
 
 def setup_toolchain():
@@ -178,7 +181,6 @@ def build_dependency_tree(sub_dir):
    
 def add_includes(file):
     src_file = file.relative_to(src_dir)
-    src_file_path = str(src_file)
     
     if src_file.suffix == ".c":
         source_files.add(src_file)
@@ -247,15 +249,8 @@ def link(output_files):
         raise ChildProcessError("Failed to link executable.")
     
 def upload(hex_file):
-    if vexctl != None:
-        if hex_file.exists():
-            info("Uploading...")
-            if subprocess.call([str(vexctl), "upload", str(hex_file)]) != 0:
-                raise ChildProcessError("Failed to upload code to Vex controller.")
-        else:
-            raise FileNotFoundError("Hex file (" + str(hex_file) + ") does not exist.")
-    else:
-        info("Uploading is not yet supported by VexBuild on your platform.")
+    if debug_enabled: vexupload.debug_level = vexupload.DebugLevel.verbose
+    vexupload.upload(hex_file, upload_device)
 
 def to_windows_path(path):
     # A Windows path can only be created from an absolute POSIX path
@@ -277,7 +272,7 @@ def get_os():
     return (platform.system(), platform.machine().endswith("64"))
     
 def debug(msg):
-    if debug_level:
+    if debug_enabled:
         info(msg)
 
 if __name__ == "__main__":
@@ -287,7 +282,7 @@ if __name__ == "__main__":
     parse_args()
     
     # If debug mode is not enabled, only print warning messages, not their whole stack trace
-    if not debug_level:
+    if not debug_enabled:
         warnings.showwarning = lambda message, category, filename, lineno: print("Warning:", message, flush=True, file=sys.stderr)
     
     try:
@@ -299,9 +294,9 @@ if __name__ == "__main__":
             upload(get_hex_file())
     except (FileNotFoundError, ChildProcessError) as e:
         # Throw the exception if debug is enabled, otherwise just print it and exit
-        if debug_level:
+        if debug_enabled:
             raise e
         else:
-            print("Error: " + str(e), flush=True, file=sys.stderr)
+            print("Error: %s" % e, flush=True, file=sys.stderr)
             exit(1)
     

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from enum import IntEnum, Enum
 import enum
-
-import serial
+from pathlib import Path
+import sys
+import serial.tools.list_ports
 import binascii
 import textwrap
 
@@ -132,15 +133,24 @@ class Packet(object):
         
         return packet
 
-def upload(hex_file, serial_port):
+def upload(hex_file, serial_port=None):
+    debug("upload(): hex_file=%s, serial_port=%s" % (hex_file, serial_port))
     # Vex uses 115200 bits/sec, no parity, 8 data bits, 1 stop bit
+    if serial_port == None:
+        ports = serial.tools.list_ports.grep("2303")
+        try:
+            serial_port = next(ports)[0]
+        except:
+            serial_port = 0
+
+    debug("upload(): Using serial port: %s" % serial_port)
     serial_conn = serial.Serial(serial_port, baudrate=115200, timeout=3)
     serial_conn.flushInput()
     # Loop device for testing
 #     serial_conn = serial.serial_for_url("loop://")
      
     # Load hex file   
-    with open(hex_file, "r") as fd:
+    with Path(hex_file).open("r") as fd:
         start_address = MAX_PROGRAM_ADDRESS;  # Initialize to highest possible address
         end_address = 0;  # Initialize to lowest possible address 
             
@@ -215,7 +225,7 @@ def set_program_mode():
     input("Then press return...")
 
 def erase_program_mem(serial_conn, address, length):
-    debug("erase_program_mem(): address=%#08x, length=%i" % (address, length))
+    debug("erase_program_mem(): address=%#08x, length=%i" % (address, length), DebugLevel.debug)
     # Make sure the caller is only trying to erase to the boundary of a block
     if (length % ERASE_ROW_SIZE) != 0:
         raise IOError("Erase length must be a multiple of %i" % ERASE_ROW_SIZE)
@@ -305,7 +315,7 @@ def return_to_user_code(serial_conn):
                     None), 0x40)
 
 def send_command(serial_conn, packet, response_etx=CHAR_ETX):
-    debug("send_command(): command: %s, arguments: %s, data: %s" % (packet.command, hex_dump(packet.arguments), hex_dump(packet.data) if packet.data else None),
+    debug("send_command(): command=%s, arguments=%s, data=%s" % (packet.command, hex_dump(packet.arguments), hex_dump(packet.data) if packet.data else None),
           DebugLevel.debug)
     
     payload = bytearray()
@@ -386,14 +396,14 @@ def debug(msg, level=DebugLevel.verbose):
         info(msg)
         
 def hex_dump(data):
-    return str(binascii.hexlify(bytes(data)), "utf-8")
+    return str(binascii.hexlify(bytes(data)), sys.getdefaultencoding())
     
 def parse_args():
     import argparse
     parser = argparse.ArgumentParser()
     
     parser.add_argument("--debug", help="debug level", default="none")
-    parser.add_argument("--dev", help="Use serial port dev instead of the default", default="/dev/ttyUSB0")
+    parser.add_argument("--dev", help="Use serial port dev instead of the default", default=None)
     parser.add_argument("hex_file", help="Hex file to upload")
         
     return parser.parse_args()
