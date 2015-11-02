@@ -6,7 +6,7 @@ This system was created because there was no easy way to build code using the MP
 
 #### Usage
 
-`usage: python3 vexbuild.py [-h] [--debug] [--toolchain TOOLCHAIN_DIR] [--upload] [PROJECT_DIR]`
+`python3 vexbuild.py [-h] [--debug] [--toolchain TOOLCHAIN_DIR] [--upload] [PROJECT_DIR]`
 
 By default, the project directory is set to the current directory.
 The default toolchain directory is `vexbuild_location/Toolchain`, which should work in almost all cases.

@@ -102,11 +102,11 @@ def parse_args():
     
     args = parser.parse_args()
     
-    global debug_enabled
+    global debug_level
     global project_dir
     global upload_enabled
     global toolchain_dir
-    debug_enabled = args.debug
+    debug_level = args.debug
     project_dir = Path(args.project_dir)
     upload_enabled = args.upload
     toolchain_dir = args.toolchain
@@ -278,7 +278,7 @@ def get_os():
     return (platform.system(), platform.machine().endswith("64"))
     
 def debug(msg):
-    if debug_enabled:
+    if debug_level:
         info(msg)
 
 if __name__ == "__main__":
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     parse_args()
     
     # If debug mode is not enabled, only print warning messages, not their whole stack trace
-    if not debug_enabled:
+    if not debug_level:
         warnings.showwarning = lambda message, category, filename, lineno: print("Warning:", message, flush=True, file=sys.stderr)
     
     try:
@@ -300,7 +300,7 @@ if __name__ == "__main__":
             upload(get_hex_file())
     except (FileNotFoundError, ChildProcessError) as e:
         # Throw the exception if debug is enabled, otherwise just print it and exit
-        if debug_enabled:
+        if debug_level:
             raise e
         else:
             print("Error: " + str(e), flush=True, file=sys.stderr)
