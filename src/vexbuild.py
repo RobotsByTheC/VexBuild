@@ -2,12 +2,11 @@
 
 import sys
 import re
-from pathlib import Path, PureWindowsPath, PurePosixPath
+from pathlib import Path
 import json
 import subprocess
 from builtins import isinstance
 import pathlib
-import subprocess
 import platform
 from warnings import warn
 
@@ -94,7 +93,7 @@ def parse_args():
     parser.add_argument("--debug", help="print debug messages", action="store_true")
     parser.add_argument("project_dir", help="project directory", nargs="?", default=".")
     
-    default_toolchain_dir = Path(os.path.realpath(__file__)).parent / "Toolchain"
+    default_toolchain_dir = Path(os.path.realpath(__file__)).parent.parent / "Toolchain"
     parser.add_argument("--toolchain", help="vex toolchain location",
                         default=Path(os.getenv("VEX_TOOLCHAIN_HOME", default_toolchain_dir)))
     

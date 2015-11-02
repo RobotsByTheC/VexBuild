@@ -134,9 +134,8 @@ class Packet(object):
 
 def upload(hex_file, serial_port):
     # Vex uses 115200 bits/sec, no parity, 8 data bits, 1 stop bit
-    # Assume same for other PIC devices for now.  Maybe add a tty
-    # settings argument to this function later if necessary.
-    serial_conn = serial.Serial(serial_port, timeout=3)
+    serial_conn = serial.Serial(serial_port, baudrate=115200, timeout=3)
+    serial_conn.flushInput()
     # Loop device for testing
 #     serial_conn = serial.serial_for_url("loop://")
      
@@ -276,7 +275,7 @@ def write_program_mem(serial_conn, address, code):
     
     # Pad the code with 0xff so it is aligned with a block. The extra 0xff will
     # not actually modify the flash, since 1 can only be written with erase.
-    code.extend((0xff,) * (total_blocks * WRITE_BLOCK_SIZE - code_len))
+    code.extend((0xff,) * ((total_blocks * WRITE_BLOCK_SIZE) - code_len))
     
     code_len = len(code)
     assert code_len % WRITE_BLOCK_SIZE == 0, "Code end not aligned to block"
@@ -290,12 +289,14 @@ def write_program_mem(serial_conn, address, code):
         assert is_valid_address(curr_addr)
         assert is_valid_address(curr_addr + WRITE_CLUSTER_SIZE)
         
+        code_offset = curr_addr - address
+        
         send_command(serial_conn, Packet(Command.write_program_mem,
                     (write_blocks,
                     curr_addr & 0xff,
                     (curr_addr >> 8) & 0xff,
                     (curr_addr >> 16) & 0xff),
-                    code[curr_addr:curr_addr + (write_blocks * WRITE_BLOCK_SIZE)]))
+                    code[code_offset:code_offset + (write_blocks * WRITE_BLOCK_SIZE)]))
         curr_addr += WRITE_CLUSTER_SIZE
     
 def return_to_user_code(serial_conn):
@@ -335,6 +336,8 @@ def send_command(serial_conn, packet, response_etx=CHAR_ETX):
         raise IOError("Tried to sent a %i byte packet. The maximum length is %i." % (len(payload), MAX_PACKET_LENGTH))
     
     sent = serial_conn.write(payload)
+    serial_conn.flush()
+
     if sent != len(payload):
         raise IOError("Error sending command. %i bytes to write, sent %i." % (len(payload), sent))
     
@@ -350,6 +353,7 @@ def escape_payload(payload):
         i += 1
 
 def read_response(serial_conn, etx=CHAR_ETX):
+    debug("read_response(): etx=%#04x" % etx, DebugLevel.debug)
     response = bytearray()
     esc = False
     
@@ -368,8 +372,10 @@ def read_response(serial_conn, etx=CHAR_ETX):
                 esc = False
                 response.append(data_val)
         else:
-            raise IOError("Timeout while reading from Vex controller.")
-        
+            raise IOError("Timeout while reading from Vex controller, response received so far: %s" % hex_dump(response))
+    
+    debug("read_response(): response=%s" % hex_dump(response), DebugLevel.debug)
+    
     return response
    
 def info(msg):
