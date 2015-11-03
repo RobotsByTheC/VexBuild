@@ -145,18 +145,7 @@ def setup_toolchain():
     wpilib_vex_lib = wpilib_dir / "Vex_library.lib"
     wpilib_easyc_lib = wpilib_dir / "easyCRuntime.lib"
     wpilib_linker_script = wpilib_dir / "18f8520.lkr"
-    
-    global vexctl
-    vexctl_dir = toolchain_dir / "vexctl"
-    
-    os = get_os()
-    if os[0] == "Linux":
-        if os[1]:
-            vexctl = vexctl_dir / "vexctl-linux-x86_64"
-        
-    if vexctl != None and not vexctl.exists():
-        raise FileNotFoundError("Could not find vexctl")
-        
+
 def read_modification_times():
     global modification_times
     

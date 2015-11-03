@@ -6,7 +6,7 @@ This system was created because there was no easy way to build code using the MP
 
 #### Usage
 
-`python3 vexbuild.py [-h] [--debug] [--toolchain TOOLCHAIN_DIR] [--upload] [PROJECT_DIR]`
+`python3 vexbuild.py [-h] [--debug] [--toolchain TOOLCHAIN] [--upload] [--dev DEV] [project_dir]`
 
 By default, the project directory is set to the current directory.
 The default toolchain directory is `vexbuild_location/Toolchain`, which should work in almost all cases.
@@ -25,7 +25,8 @@ Then it compiles each file, placing the output in `build/`. On OSes other than W
 
 If the compile is successful, the output files are linked and a hex output file is produced. It has the name of the project directory.
 
-If the `--upload` flag was specified, the script will attempt to upload the code to the robot, using [vexctl](http://personalpages.tds.net/~jwbacon/Computer/roboctl.html). Currently the a compiled version is only included for Linux. It should be pretty simple to compile for OSX, but I don't have access to a machine to do it. I have yet to get a successful build on Windows, but I'm working on it. Currently the best option for Windows is to use [IFI loader](http://www.vexrobotics.com/wiki/PIC_Microcontroller_Downloads), but this process will not be automatic.
+If the `--upload` flag was specified, the script will attempt to upload the code to the robot, using VexUpload, which is described below.
+
 
 #### Requirements
 
@@ -39,3 +40,30 @@ If the `--upload` flag was specified, the script will attempt to upload the code
 
 - The dependency parser is rather naive, so comments and `#ifdef`s around `#include` statements will cause it to not function correctly. The simplicity of most Vex code should prevent this from being a big problem.
 - There is no way to configure the layout of the project directory. All source files must be located in `src/` and all output will be sent to `build/`. This build system was designed to satisfy our use cases, so configuration was not a priority, but feel free to help add features.
+
+# VexUpload
+
+### A cross-platform uploader for the Vex PIC (v0.5) controller.
+
+This program/module reads Intel hex files and uploads them to the Vex controller. It should work on all platforms where PySerial is supported.
+
+#### Usage
+
+`python3 vexupload.py [-h] [--debug DEBUG] [--dev DEV] hex_file`
+
+If no serial device is specified, it looks for a PL2303 USB-serial converter (which is used by the Vex programmer), and failing that, picks the first serial port it finds.
+
+Valid debug levels are "none" (the default), "verbose", "debug" and "insane". Only use "insane" if you have a huge terminal buffer.
+
+#### Description
+
+The uploader starts by reading the specified hex file into memory. It then attempts to erase the existing program on the controller, and then write the new one. More details are available by reading the code.
+
+I implemented the bootloader communication protocol based on the source code for [vexctl](http://personalpages.tds.net/~jwbacon/Computer/roboctl.html), the [documentation for jifi](https://github.com/defunctzombie/jifi/wiki) and [Microchip Application Note 851](http://ww1.microchip.com/downloads/en/AppNotes/00851b.pdf). Thank you to Jason Bacon for writing vexctl and helping me find this information.
+
+This uploader can be used by other applications as a module, but it is not designed for that, because it prints messages and progress bars.
+
+#### Requirements
+
+- [Python 3](https://www.python.org/)
+- [pySerial](https://github.com/pyserial/pyserial)

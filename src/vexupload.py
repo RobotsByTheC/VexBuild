@@ -130,7 +130,7 @@ class Packet(object):
         
         if packet.checksum != checksum:
             raise IOError("Checksum does not match data: calculated %#02x, received %#02x" % (packet.checksum, checksum))
-        
+
         return packet
 
 def upload(hex_file, serial_port=None):
@@ -145,9 +145,9 @@ def upload(hex_file, serial_port=None):
 
     debug("upload(): Using serial port: %s" % serial_port)
     serial_conn = serial.Serial(serial_port, baudrate=115200, timeout=3)
-    serial_conn.flushInput()
     # Loop device for testing
 #     serial_conn = serial.serial_for_url("loop://")
+    serial_conn.flushInput()
      
     # Load hex file   
     with Path(hex_file).open("r") as fd:
@@ -184,12 +184,19 @@ def upload(hex_file, serial_port=None):
             address = int(line[3:7], 16);
             if address != 0:
                 line_len = int(line[1:3], 16);
+                code_offset = address - start_address
                 
                 for c in range(line_len):
                     pos = 9 + c * 2
                     val = int(line[pos:pos + 2], 16)
-                    code[address - start_address + c] = val
-                    
+                    code[code_offset + c] = val
+                # Calculate checksum based on data read from file
+                computed_checksum = -(sum(code[code_offset:code_offset + line_len])+line_len + (address & 0xff) + ((address >> 8) & 0xff)) & 0xff
+                # Read checksum from line
+                line_checksum = int(line[-2:], 16)
+                if computed_checksum != line_checksum:
+                    raise HexException(hex_file, "Hex file checksum verification failed: computed=%#04x, expected=%#04x" % (computed_checksum,line_checksum))
+
     set_program_mode()
     
     erase_rows = program_length // ERASE_ROW_SIZE
