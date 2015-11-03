@@ -6,6 +6,7 @@ import sys
 import serial.tools.list_ports
 import binascii
 import textwrap
+import shutil
 
 MAX_PACKET_LENGTH = 255
 
@@ -191,29 +192,30 @@ def upload(hex_file, serial_port=None):
                     val = int(line[pos:pos + 2], 16)
                     code[code_offset + c] = val
                 # Calculate checksum based on data read from file
-                computed_checksum = -(sum(code[code_offset:code_offset + line_len])+line_len + (address & 0xff) + ((address >> 8) & 0xff)) & 0xff
+                computed_checksum = -(sum(code[code_offset:code_offset + line_len]) + line_len + (address & 0xff) + ((address >> 8) & 0xff)) & 0xff
                 # Read checksum from line
                 line_checksum = int(line[-2:], 16)
                 if computed_checksum != line_checksum:
-                    raise HexException(hex_file, "Hex file checksum verification failed: computed=%#04x, expected=%#04x" % (computed_checksum,line_checksum))
+                    raise HexException(hex_file, "Hex file checksum verification failed: computed=%#04x, expected=%#04x" % (computed_checksum, line_checksum))
 
     set_program_mode()
-    
+
     erase_rows = program_length // ERASE_ROW_SIZE
     if program_length % ERASE_ROW_SIZE != 0: erase_rows += 1
     info("\nProgram size is %i bytes." % program_length)
-    info("Erasing %i rows (%i bytes/row, %i bytes total)...\n" % 
+    info("Erasing %i rows (%i bytes/row, %i bytes total)..." % 
         (erase_rows, ERASE_ROW_SIZE, program_length))
-        
+
     erase_program_mem(serial_conn, start_address, erase_rows * ERASE_ROW_SIZE)
-    
+    info("\n")
+
     write_blocks = program_length // WRITE_CLUSTER_SIZE
     if program_length % WRITE_CLUSTER_SIZE != 0: write_blocks += 1
-    info("Writing %i clusters (8 bytes/block, 8 blocks/cluster, %i bytes total)" % 
+    info("Writing %i clusters (8 bytes/block, 8 blocks/cluster, %i bytes total)..." % 
         (write_blocks, write_blocks * WRITE_CLUSTER_SIZE))
-    
+
     write_program_mem(serial_conn, start_address, code)
-        
+
     return_to_user_code(serial_conn)
         
 def check_program_range(hex_file, start_address, end_address):
@@ -237,15 +239,18 @@ def erase_program_mem(serial_conn, address, length):
     if (length % ERASE_ROW_SIZE) != 0:
         raise IOError("Erase length must be a multiple of %i" % ERASE_ROW_SIZE)
 
-    total_rows = length // ERASE_ROW_SIZE
+    remaining_rows = length // ERASE_ROW_SIZE
 
     # If low_len is 0 (e.g. len = 256) the controller just goes to the IFI> prompt.
     # Work around this by erasing erase_rows less than 256 bytes, so that low_len
     # is always > 0 and high_len is always 0.
     curr_addr = address
-    while total_rows > 0:
-        erase_rows = min(MAX_ERASE_ROWS, total_rows) 
-        total_rows -= erase_rows
+    total_rows = remaining_rows
+    progress(0)
+
+    while remaining_rows > 0:
+        erase_rows = min(MAX_ERASE_ROWS, remaining_rows)
+        remaining_rows -= erase_rows
         erase_length = erase_rows * ERASE_ROW_SIZE
         debug("erase_program_mem(): Erasing %i rows at %#08x" % (erase_rows, curr_addr))
         
@@ -261,6 +266,7 @@ def erase_program_mem(serial_conn, address, length):
                     None))
         
         curr_addr += erase_length
+        progress(1 - remaining_rows / total_rows)
 
 def read_program_mem(serial_conn, address, length):
     if length > MAX_READ_LENGTH:
@@ -285,29 +291,34 @@ def write_program_mem(serial_conn, address, code):
     assert address % WRITE_BLOCK_SIZE == 0, "Code start not aligned to block"
     
     code_len = len(code)
-    total_blocks = code_len // WRITE_BLOCK_SIZE
+    remaining_blocks = code_len // WRITE_BLOCK_SIZE
     # If the code is not aligned to a block, increment the block count
     if (code_len % WRITE_BLOCK_SIZE) != 0:
-        total_blocks += 1
+        remaining_blocks += 1
     
     # Pad the code with 0xff so it is aligned with a block. The extra 0xff will
     # not actually modify the flash, since 1 can only be written with erase.
-    code.extend((0xff,) * ((total_blocks * WRITE_BLOCK_SIZE) - code_len))
+    code.extend((0xff,) * ((remaining_blocks * WRITE_BLOCK_SIZE) - code_len))
     
     code_len = len(code)
     assert code_len % WRITE_BLOCK_SIZE == 0, "Code end not aligned to block"
     
     curr_addr = address
-    while total_blocks > 0:
-        write_blocks = min(WRITE_CLUSTER_SIZE // WRITE_BLOCK_SIZE, total_blocks) 
-        total_blocks -= write_blocks
+
+    # Total block count is used for the progress bar
+    total_blocks = remaining_blocks
+    progress(0)
+
+    while remaining_blocks > 0:
+        write_blocks = min(WRITE_CLUSTER_SIZE // WRITE_BLOCK_SIZE, remaining_blocks)
+        remaining_blocks -= write_blocks
         debug("write_program_mem(): Writing %i blocks at %#06x" % (write_blocks, curr_addr))
-        
+
         assert is_valid_address(curr_addr)
         assert is_valid_address(curr_addr + WRITE_CLUSTER_SIZE)
-        
+
         code_offset = curr_addr - address
-        
+
         send_command(serial_conn, Packet(Command.write_program_mem,
                     (write_blocks,
                     curr_addr & 0xff,
@@ -315,6 +326,8 @@ def write_program_mem(serial_conn, address, code):
                     (curr_addr >> 16) & 0xff),
                     code[code_offset:code_offset + (write_blocks * WRITE_BLOCK_SIZE)]))
         curr_addr += WRITE_CLUSTER_SIZE
+
+        progress(1 - remaining_blocks / total_blocks)
     
 def return_to_user_code(serial_conn):
     return send_command(serial_conn, Packet(Command.return_to_user_code,
@@ -402,6 +415,15 @@ def debug(msg, level=DebugLevel.verbose):
     if debug_level.value >= level.value:
         info(msg)
         
+def progress(progress):
+    # Make sure debug prints are not enabled, and we are running in a real terminal
+    # If these conditions are not met, progress bars will not work right.
+    if debug_level == DebugLevel.none and hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+        terminal_width = shutil.get_terminal_size((80, 20)).columns
+        progress_width = terminal_width - 7  # Subtract columns for brackets and percent
+        filled_width = round(progress * progress_width)
+        print("\r[{}{}] {:>4.0%}".format(filled_width * "=", (progress_width - filled_width) * " ", progress), end="", flush=True)
+
 def hex_dump(data):
     return str(binascii.hexlify(bytes(data)), sys.getdefaultencoding())
     
