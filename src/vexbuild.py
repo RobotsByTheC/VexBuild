@@ -6,6 +6,7 @@ from pathlib import Path
 import pathlib
 import platform
 import re
+import shutil
 import subprocess
 import sys
 from warnings import warn
@@ -102,7 +103,7 @@ def parse_args():
     parser.add_argument("--toolchain", help="vex toolchain location",
                         default=Path(os.getenv("VEX_TOOLCHAIN_HOME", default_toolchain_dir)))
     
-    parser.add_argument("--link-python", help="create a symlink to the python interpreter in the script directory", action="store_true")
+    parser.add_argument("--copy-launcher", help="copy the python launcher for Eclipse", action="store_true")
     parser.add_argument("--upload", help="try to upload to the Vex controller", action="store_true")
     parser.add_argument("--dev", help="serial device to use for uploading", default=None)
     
@@ -110,13 +111,13 @@ def parse_args():
     
     global debug_enabled
     global project_dir
-    global create_python_link
+    global enable_copy_launcher
     global upload_enabled
     global upload_device
     global toolchain_dir
     debug_enabled = args.debug
     project_dir = Path(args.project_dir)
-    create_python_link = args.link_python
+    enable_copy_launcher = args.copy_launcher
     upload_enabled = args.upload
     upload_device = args.dev
     toolchain_dir = args.toolchain
@@ -154,14 +155,17 @@ def setup_toolchain():
     wpilib_easyc_lib = wpilib_dir / "easyCRuntime.lib"
     wpilib_linker_script = wpilib_dir / "18f8520.lkr"
     
-    if create_python_link:
-        interpreter_path = sys.executable
-        link_path = script_path.parent / "python"
-        if link_path.exists():
-            link_path.unlink()
-            info("Removed existing python interpreter link")
-        os.symlink(str(interpreter_path), str(link_path))
-        info("Created symlink from \"%s\" to \"%s\"" % (interpreter_path, link_path))
+    if enable_copy_launcher:
+        copy_launcher()
+
+def copy_launcher():
+    os = get_os()
+    launcher_suffix = ".exe" if os[0] == "Windows" else ""
+    launcher_name = "launcher-%s-%s%s" % (os[0] , os[1] , launcher_suffix)
+    info("Using launcher: %s" % launcher_name)
+    launcher_source = script_path.parent / "launcher" / launcher_name
+    launcher_target = script_path.parent / ("launcher-bin" + launcher_suffix)
+    shutil.copy(str(launcher_source), str(launcher_target))
 
 def read_modification_times():
     global modification_times
@@ -275,7 +279,7 @@ def info(msg):
     print(msg, flush=True)
     
 def get_os():
-    return (platform.system(), platform.machine().endswith("64"))
+    return (platform.system(), platform.architecture()[0])
     
 def debug(msg):
     if debug_enabled:
@@ -305,11 +309,3 @@ if __name__ == "__main__":
         else:
             print("Error: %s" % e, flush=True, file=sys.stderr)
             exit(1)
-    
-if get_os()[0] == "Windows":
-    import ctypes
-    import os.path
-    def windows_symlink(source, link_name):
-        kdll = ctypes.windll.LoadLibrary("kernel32.dll")
-        kdll.CreateSymbolicLinkA(link_name, source, 0x01 if os.path.isdir(source) else 0x0)
-    os.symlink = windows_symlink
