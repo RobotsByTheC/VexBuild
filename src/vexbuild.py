@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 
-import sys
-import re
-from pathlib import Path
 import json
-import subprocess
-from builtins import isinstance
+import os
+from pathlib import Path
 import pathlib
 import platform
+import re
+import subprocess
+import sys
 from warnings import warn
+
+from serial.serialutil import SerialException
+
 import vexupload
 
+
+script_path = Path(os.path.realpath(__file__))
 include_regex = re.compile('\s*\#include\s+["<]([^">]+)*[">]')
 
 def build():
@@ -93,10 +98,11 @@ def parse_args():
     parser.add_argument("--debug", help="print debug messages", action="store_true")
     parser.add_argument("project_dir", help="project directory", nargs="?", default=".")
     
-    default_toolchain_dir = Path(os.path.realpath(__file__)).parent.parent / "Toolchain"
+    default_toolchain_dir = script_path.parent.parent / "Toolchain"
     parser.add_argument("--toolchain", help="vex toolchain location",
                         default=Path(os.getenv("VEX_TOOLCHAIN_HOME", default_toolchain_dir)))
     
+    parser.add_argument("--link-python", help="create a symlink to the python interpreter in the script directory", action="store_true")
     parser.add_argument("--upload", help="try to upload to the Vex controller", action="store_true")
     parser.add_argument("--dev", help="serial device to use for uploading", default=None)
     
@@ -104,11 +110,13 @@ def parse_args():
     
     global debug_enabled
     global project_dir
+    global create_python_link
     global upload_enabled
     global upload_device
     global toolchain_dir
     debug_enabled = args.debug
     project_dir = Path(args.project_dir)
+    create_python_link = args.link_python
     upload_enabled = args.upload
     upload_device = args.dev
     toolchain_dir = args.toolchain
@@ -145,6 +153,15 @@ def setup_toolchain():
     wpilib_vex_lib = wpilib_dir / "Vex_library.lib"
     wpilib_easyc_lib = wpilib_dir / "easyCRuntime.lib"
     wpilib_linker_script = wpilib_dir / "18f8520.lkr"
+    
+    if create_python_link:
+        interpreter_path = sys.executable
+        link_path = script_path.parent / "python"
+        if link_path.exists():
+            link_path.unlink()
+            info("Removed existing python interpreter link")
+        os.symlink(str(interpreter_path), str(link_path))
+        info("Created symlink from \"%s\" to \"%s\"" % (interpreter_path, link_path))
 
 def read_modification_times():
     global modification_times
@@ -265,7 +282,6 @@ def debug(msg):
         info(msg)
 
 if __name__ == "__main__":
-    import os
     import warnings
     
     parse_args()
@@ -275,13 +291,14 @@ if __name__ == "__main__":
         warnings.showwarning = lambda message, category, filename, lineno: print("Warning:", message, flush=True, file=sys.stderr)
     
     try:
+        
         # Build the program
         build()
     
         # If the upload flag was given, upload the program
         if upload_enabled:
             upload(get_hex_file())
-    except (FileNotFoundError, ChildProcessError) as e:
+    except (FileNotFoundError, ChildProcessError, SerialException) as e:
         # Throw the exception if debug is enabled, otherwise just print it and exit
         if debug_enabled:
             raise e
@@ -289,3 +306,10 @@ if __name__ == "__main__":
             print("Error: %s" % e, flush=True, file=sys.stderr)
             exit(1)
     
+if get_os()[0] == "Windows":
+    import ctypes
+    import os.path
+    def windows_symlink(source, link_name):
+        kdll = ctypes.windll.LoadLibrary("kernel32.dll")
+        kdll.CreateSymbolicLinkA(link_name, source, 0x01 if os.path.isdir(source) else 0x0)
+    os.symlink = windows_symlink
