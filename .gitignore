@@ -1,2 +1,2 @@
 *.pyc
-src/launcher-bin
+src/launcher-bin*
