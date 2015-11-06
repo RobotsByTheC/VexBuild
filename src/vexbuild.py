@@ -160,8 +160,13 @@ def setup_toolchain():
 
 def copy_launcher():
     os = get_os()
-    launcher_suffix = ".exe" if os[0] == "Windows" else ""
-    launcher_name = "launcher-%s-%s%s" % (os[0] , os[1] , launcher_suffix)
+    
+    if os[0] == "Windows":
+        launcher_name = "launcher-windows-%s.exe" % os[1]
+        launcher_suffix = ".exe"
+    else:
+        launcher_name = "launcher-unix.sh"
+        launcher_suffix = ""
     info("Using launcher: %s" % launcher_name)
     launcher_source = script_path.parent / "launcher" / launcher_name
     launcher_target = script_path.parent / ("launcher-bin" + launcher_suffix)
