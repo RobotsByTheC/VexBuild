@@ -163,13 +163,11 @@ def copy_launcher():
     
     if os[0] == "Windows":
         launcher_name = "launcher-windows-%s.exe" % os[1]
-        launcher_suffix = ".exe"
     else:
         launcher_name = "launcher-unix.sh"
-        launcher_suffix = ""
     info("Using launcher: %s" % launcher_name)
     launcher_source = script_path.parent / "launcher" / launcher_name
-    launcher_target = script_path.parent / ("launcher-bin" + launcher_suffix)
+    launcher_target = script_path.parent / ("launcher-bin.exe")
     shutil.copy(str(launcher_source), str(launcher_target))
 
 def read_modification_times():
@@ -240,7 +238,7 @@ def compile(file):
         args.append("wine")
 
     output_file = to_windows_path(build_dir / (file.stem + ".o"))
-    args.extend([str(mcc18), "-p=18F8520", "-w=2", "-D_VEX_BOARD",
+    args.extend([str(mcc18), "-p=18F8520", "-w=2", "-D_VEX_BOARD", "-ls",
                     "-I=" + str(c18_header_dir), "-I=" + str(wpilib_dir),
                     "-fo=" + str(output_file), str(to_windows_path(src_dir / file))])
     
