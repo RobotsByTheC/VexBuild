@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import binascii
 from enum import IntEnum, Enum
 import enum
 from pathlib import Path
 import sys
-import serial.tools.list_ports
-import binascii
 import textwrap
-import shutil
+
+import serial.tools.list_ports
+
 
 MAX_PACKET_LENGTH = 255
 
@@ -142,7 +143,11 @@ def upload(hex_file, serial_port=None):
         try:
             serial_port = next(ports)[0]
         except:
-            serial_port = 0
+            ports = serial.tools.list_ports.grep("04d8:000a")
+            try:
+                serial_port = next(ports)[0]
+            except:            
+                serial_port = 0
 
     debug("upload(): Using serial port: %s" % serial_port)
     serial_conn = serial.Serial(serial_port, baudrate=115200, timeout=3)
@@ -245,8 +250,6 @@ def erase_program_mem(serial_conn, address, length):
     # Work around this by erasing erase_rows less than 256 bytes, so that low_len
     # is always > 0 and high_len is always 0.
     curr_addr = address
-    total_rows = remaining_rows
-    progress(0)
 
     while remaining_rows > 0:
         erase_rows = min(MAX_ERASE_ROWS, remaining_rows)
@@ -266,7 +269,7 @@ def erase_program_mem(serial_conn, address, length):
                     None))
         
         curr_addr += erase_length
-        progress(1 - remaining_rows / total_rows)
+        progress_dot()
 
 def read_program_mem(serial_conn, address, length):
     if length > MAX_READ_LENGTH:
@@ -305,10 +308,6 @@ def write_program_mem(serial_conn, address, code):
     
     curr_addr = address
 
-    # Total block count is used for the progress bar
-    total_blocks = remaining_blocks
-    progress(0)
-
     while remaining_blocks > 0:
         write_blocks = min(WRITE_CLUSTER_SIZE // WRITE_BLOCK_SIZE, remaining_blocks)
         remaining_blocks -= write_blocks
@@ -327,7 +326,7 @@ def write_program_mem(serial_conn, address, code):
                     code[code_offset:code_offset + (write_blocks * WRITE_BLOCK_SIZE)]))
         curr_addr += WRITE_CLUSTER_SIZE
 
-        progress(1 - remaining_blocks / total_blocks)
+        progress_dot()
     
 def return_to_user_code(serial_conn):
     return send_command(serial_conn, Packet(Command.return_to_user_code,
@@ -415,14 +414,11 @@ def debug(msg, level=DebugLevel.verbose):
     if debug_level.value >= level.value:
         info(msg)
         
-def progress(progress):
+def progress_dot():
     # Make sure debug prints are not enabled, and we are running in a real terminal
     # If these conditions are not met, progress bars will not work right.
-    if debug_level == DebugLevel.none and hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
-        terminal_width = shutil.get_terminal_size((80, 20)).columns
-        progress_width = terminal_width - 7  # Subtract columns for brackets and percent
-        filled_width = round(progress * progress_width)
-        print("\r[{}{}] {:>4.0%}".format(filled_width * "=", (progress_width - filled_width) * " ", progress), end="", flush=True)
+    if debug_level == DebugLevel.none:
+        print(".", end="", flush=True)
 
 def hex_dump(data):
     return str(binascii.hexlify(bytes(data)), sys.getdefaultencoding())
